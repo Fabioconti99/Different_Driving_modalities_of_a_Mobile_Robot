@@ -16,6 +16,8 @@ active_ = rospy.get_param('active')
 desired_position_x = rospy.get_param('des_pos_x')
 desired_position_y = rospy.get_param('des_pos_y')
 
+
+
 def update_variables():
 	global desired_position_x, desired_position_y, active_
 	active_ = rospy.get_param('active')
@@ -27,7 +29,29 @@ def clbk_odom(msg):
 
 	global position_
 	position_ = msg.pose.pose.position
+
+def action_client_set_goal():
+
+	goal.target_pose.pose.position.x = desired_position_x
+	goal.target_pose.pose.position.y = desired_position_y
+	print("\033[1;32;40m Start autonomous drive \033[0;37;40m \n")
+	client.send_goal(goal)
 	
+	
+def action_client_init():
+
+	global client 
+	global goal 
+	
+	client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
+	client.wait_for_server()
+	
+	goal = MoveBaseGoal()
+	goal.target_pose.header.frame_id = "map"
+	goal.target_pose.header.stamp = rospy.Time.now()
+	goal.target_pose.pose.orientation.w = 1.0
+	
+		
 
 def main():
 
@@ -35,46 +59,44 @@ def main():
 	sub_odom = rospy.Subscriber('/odom', Odometry, clbk_odom)
 	rate = rospy.Rate(10)
 	flag = 0
-    
+	flag_2 = 0
+	
+	action_client_init()
+	
+	i = 0
 	while(1):
 		update_variables()
 		
-		#if(i%5==0):
-			#print("X: " + str(position_.x))
-			#print("Y: " + str(position_.y))
-			#i=i+1
+		
 		
 		if active_==1:
-    	
+			
+			if flag == 1:
+				action_client_set_goal()
+				flag = 0
+				flag_2 = 1
 	    
-	    	
-			client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
-			client.wait_for_server()
-	    
-			goal = MoveBaseGoal()
-			goal.target_pose.header.frame_id = "map"
-			goal.target_pose.header.stamp = rospy.Time.now()
-			goal.target_pose.pose.position.x = desired_position_x
-			goal.target_pose.pose.position.y = desired_position_y
-			goal.target_pose.pose.orientation.w = 1.0
-	    
-			client.send_goal(goal)
-			wait = client.wait_for_result(timeout = rospy.Duration(60.0))
-	    
-			if not wait:
-				print("Action server not available!")
-				client.cancelGoal(goal)
-				rospy.set_param('active', 0)
-			else:
-				client.get_result()
-				rospy.set_param('active', 0)
-	    
-			flag = 0
 	    
 		else:
-			if flag == 0:
-				print("\033[1;31;40m STOP MODALITY 1 \033[0;37;40m \n")
+			if flag == 0 and flag_2==0:
+				#state with no goal set
+				
+				print("\033[1;31;40m STOP MODALITY 1 \033[0;37;40m \n\n\n")
 				flag = 1
+				
+			if flag == 0 and flag_2==1:
+				#state with goal already set
+				
+				print("\033[1;31;40m GOAL CANCELED \033[0;37;40m \n\n\n")
+				client.cancel_goal()
+				flag = 1
+				flag_2 = 0
+				
+		if(i%10==0):
+			print("coordinates: ", end = '\r')
+			print("X: " + str(position_.x), end = '\r')
+			print("Y: " + str(position_.y), end = '\r')
+		i=i+1
 	    		
 	rate.sleep()
      

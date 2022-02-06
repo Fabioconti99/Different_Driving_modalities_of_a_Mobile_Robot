@@ -93,6 +93,9 @@ def main():
 				flag_2 = 0
 				
 		if(i%10==0):
+            print(" ", end = '\r')
+            print(" ", end = '\r')
+            print(" ", end = '\r')
 			print("coordinates: ", end = '\r')
 			print("X: " + str(position_.x), end = '\r')
 			print("Y: " + str(position_.y), end = '\r')

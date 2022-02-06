@@ -77,7 +77,6 @@ def main():
 		elif command == 2:
 			if flag == 1:
 				print("Canceling goal")
-				#action_client_cancel_goal()
 				flag=0
 						
 			rospy.set_param('active', 2)
@@ -88,7 +87,6 @@ def main():
 		elif command == 3:
 			if flag == 1:
 				print("Canceling goal")
-				#action_client_cancel_goal()
 				flag=0
 				
 			rospy.set_param('active', 3)

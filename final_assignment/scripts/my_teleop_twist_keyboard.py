@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# libraries import
 from __future__ import print_function
 
 import threading
@@ -13,6 +14,7 @@ from geometry_msgs.msg import Twist
 import sys, select, termios, tty
 
 msg = """
+\033[1;37;40m
 Reading from the keyboard  and Publishing to Twist!
 ---------------------------
 Moving around:
@@ -28,8 +30,9 @@ w/x : increase/decrease only linear speed by 10%
 e/c : increase/decrease only angular speed by 10%
 
 CTRL-C to quit
+\033[0;37;40m
 """
-
+# Dictionary for moving commands
 moveBindings = {
         'i':(1,0,0,0),
         'o':(1,0,0,-1),
@@ -51,6 +54,7 @@ moveBindings = {
         'b':(0,0,-1,0),
     }
 
+# Dictionary for speed commands
 speedBindings={
         'q':(1.1,1.1),
         'z':(.9,.9),
@@ -110,6 +114,7 @@ class PublishThread(threading.Thread):
         self.update(0, 0, 0, 0, 0, 0)
         self.join()
 
+	# my function for stopping the robot's movements 
     def my_stop(self):
         twist = Twist()
         twist.linear.x = 0
@@ -166,9 +171,13 @@ def vels(speed, turn):
     return "currently:\tspeed %s\tturn %s " % (speed,turn)
 
 if __name__=="__main__":
-    rospy.init_node('my_teleop_twist_kb')
-    active_=rospy.get_param("/active")
-    flag = 1
+    rospy.init_node('my_teleop_twist_kb')	# initialization of the node.
+    
+    active_=rospy.get_param("/active")	# Assignment of the active param value to a local variable.
+    flag = 1					# Flag variable used to keep track of the current state.
+    flag_2 = 0					# Flag variable used to keep track of the current state.
+    
+    # Setting up some initial parameters.
     settings = termios.tcgetattr(sys.stdin)
     speed = rospy.get_param("~speed", 0.5)
     turn = rospy.get_param("~turn", 1.0)
@@ -185,29 +194,37 @@ if __name__=="__main__":
     z = 0
     th = 0
     status = 0
-    flag_2 = 0
 
 
     pub_thread.wait_for_subscribers()
     pub_thread.update(x, y, z, th, speed, turn)
 
-    print(msg)
-    print(vels(speed,turn))
+
+    print(msg)			# Print of the initial message.
+    print(vels(speed,turn))	# Print of the robot's state info.
 
     while(1):
-        active_=rospy.get_param("/active")
+    
+        active_=rospy.get_param("/active")	# Update of the modality param value.
 
         if active_ == 2:
-            key = getKey(key_timeout)
+        	
+        	# Print for modality activation.
             if flag_2 == 0:
             	 print("\033[1;32;40m START MODALITY 2 \033[0;37;40m")
+            	 flag_2 = 1
             
-            flag_2 = 1
-            if key in moveBindings.keys():
+            	 
+            key = getKey(key_timeout)		# Keyboard Input for robot's movements.
+		
+		# Analisys of the given input for movements.
+            if key in moveBindings.keys():	
                 x = moveBindings[key][0]
                 y = moveBindings[key][1]
                 z = moveBindings[key][2]
                 th = moveBindings[key][3]
+                
+            # Analisys of the given input for speed.
             elif key in speedBindings.keys():
                 speed = speed * speedBindings[key][0]
                 turn = turn * speedBindings[key][1]
@@ -227,11 +244,13 @@ if __name__=="__main__":
                 th = 0
                 if (key == '\x03'):
                     break
-
+		
+		# Publishing of the updated parameters.
             pub_thread.update(x, y, z, th, speed, turn)
             flag = 1
 
         else:
+        	# Idle state once the modality changes.
             if flag == 1:
                 pub_thread.my_stop() 
                 print("\033[1;31;40m STOP MODALITY 2 \033[0;37;40m")

@@ -16,8 +16,10 @@ msg = """
 Reading from the keyboard  and Publishing to Twist!
 ---------------------------
 Moving around:
-   j    i    l
-        k    
+
+   u    i    o
+   j    k    l
+   m    ,    . 
 
 anything else : stop
 

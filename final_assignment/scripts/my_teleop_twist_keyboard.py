@@ -4,7 +4,7 @@
 from __future__ import print_function
 
 import threading
-# from final_assignment.msg import Avoid
+
 import roslib; roslib.load_manifest('teleop_twist_keyboard')
 import rospy
 

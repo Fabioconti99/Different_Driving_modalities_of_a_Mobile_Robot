@@ -7,12 +7,15 @@ from sensor_msgs.msg import LaserScan
 import roslib; roslib.load_manifest('teleop_twist_keyboard')
 import rospy
 
+from final_assignment.msg import Avoid
 
 from geometry_msgs.msg import Twist
 import time
 from std_srvs.srv import *
 import sys, select, termios, tty
 
+
+# Initial message
 msg = """
 \033[1;37;40m
 Reading from the keyboard  and Publishing to Twist!
@@ -30,10 +33,10 @@ e/c : increase/decrease only angular speed by 10%
 CTRL-C to quit
 \033[0;37;40m
 """
-
-ok_left = True
-ok_right = True
-ok_straight = True
+# Variables for determining which direction is allowed.
+ok_left = 1
+ok_right = 1
+ok_straight = 1
 
 # Dictionary for moving commands
 moveBindings = {
@@ -104,8 +107,8 @@ class PublishThread(threading.Thread):
         self.update(0, 0, 0, 0, 0, 0)
         self.join()
 
-		
-    def my_stop(self):
+	# Function needed for stopping the robot motion.
+    def stop_motion(self):
         twist = Twist()
         # Publish stop message when thread exits.
         twist.linear.x = 0
@@ -157,34 +160,17 @@ def getKey(key_timeout):
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
     return key
 
-# Call back function needed for checking if any wall is close to the robot and it what direction the wall is.
-def cb_avoid(msg):
 
-    global ok_left
-    global ok_right
-    global ok_straight
+def cb_avoidence(msg):
 
-    right = min(msg.ranges[0:143])
-    front = min(msg.ranges[288:431])
-    left = min(msg.ranges[576:719])
-					
-					# If the robot is close to the right of the robot.
-    if right < 1.0:
-        ok_right =False
-    else:
-        ok_right =True
-					# If the robot is close to the front of the robot.
-    if front < 1.0:
-        ok_straight =False
-    else:
-        ok_straight =True
-					# If the robot is close to the left of the robot.
-    if left < 1.0:
-        ok_left =False
-    else:
-        ok_left =True
-
-
+	global ok_left
+	global ok_right
+	global ok_straight
+	
+	ok_right = msg.right
+	ok_straight = msg.front
+	ok_left = msg.left
+	
 
 
 # Function needed for preventing a certain command if the direction is blocked.
@@ -195,31 +181,32 @@ def new_dict(dictionary):
     global ok_straight
     
 	# If any of the flags for checking if the wall are turned on in any combinations, the function will disable the corrisponding directions command.
-    if not ok_straight and not ok_right and not ok_left:
+    if not ok_straight == 1 and not ok_right == 1 and not ok_left == 1:
         dictionary.pop('i')
         dictionary.pop('j')
         dictionary.pop('l')
         
-    elif not ok_left and not ok_straight and ok_right:
-        popped1 = dictionary.pop('i')
-        popped2 = dictionary.pop('j')
+    elif not ok_left == 1 and not ok_straight == 1 and ok_right == 1:
+        dictionary.pop('i')
+        dictionary.pop('j')
         
-    elif ok_left and not ok_straight and not ok_right:
-        popped1 = dictionary.pop('i')
-        popped2 = dictionary.pop('l')
+    elif ok_left == 1 and not ok_straight == 1 and not ok_right == 1:
+        dictionary.pop('i')
+        dictionary.pop('l')
         
-    elif not ok_left and ok_straight and not ok_right:
-        popped1 = dictionary.pop('l')
-        popped2 = dictionary.pop('j')
+    elif not ok_left == 1 and ok_straight == 1 and not ok_right == 1:
+        dictionary.pop('l')
+        dictionary.pop('j')
         
-    elif ok_left and not ok_straight and ok_right:
-        popped1 = dictionary.pop('i')
+    elif ok_left == 1 and not ok_straight == 1 and ok_right == 1:
+        dictionary.pop('i')
         
-    elif not ok_left and ok_straight and ok_right:
-        popped1 = dictionary.pop('j')
+    elif not ok_left == 1 and ok_straight == 1 and ok_right == 1:
+        dictionary.pop('j')
         
-    elif ok_left and ok_straight and not ok_right:
-        popped1 = dictionary.pop('l')
+    elif ok_left == 1 and ok_straight == 1 and not ok_right == 1:
+        pdictionary.pop('l')
+        
 
 
 
@@ -230,10 +217,13 @@ def vels(speed, turn):
     return "currently:\tspeed %s\tturn %s " % (speed,turn)
 
 if __name__=="__main__":
-    rospy.init_node('teleop_avoid') 		# initialization of the node.
-    active_=rospy.get_param("/active")		# Assignment of the active param value to a local variable.
-    flag = 1						# Flag variable used to keep track of the current state.
-    flag_2 = 0						# Flag variable used to keep track of the current state.
+
+    rospy.init_node('teleop_avoid') 					# Initialization of the node.
+    active_=rospy.get_param("/active")					# Assignment of the active param value to a local variable.
+    rospy.Subscriber("custom_controller", Avoid, cb_avoidence)	# Subscriber to the custom topic.
+    flag = 1									# Flag variable used to keep track of the current state.
+    flag_2 = 0									# Flag variable used to keep track of the current state.
+    
     
     # Setting up some initial parameters.
     settings = termios.tcgetattr(sys.stdin)
@@ -241,7 +231,6 @@ if __name__=="__main__":
     turn = rospy.get_param("~turn", 1.0)
     repeat = rospy.get_param("~repeat_rate", 0.0)
     key_timeout = rospy.get_param("~key_timeout", 0.1)
-    sub = rospy.Subscriber('/scan', LaserScan, cb_avoid)
     
     if key_timeout == 0.0:
         key_timeout = None
@@ -263,23 +252,25 @@ if __name__=="__main__":
     print(msg)				# Print of the initial message.
     print(vels(speed,turn))		# Print of the robot's state info.
     
-    while(1):
+    while not rospy.is_shutdown():
         	
-        active_=rospy.get_param("/active")		# Update of the modality param value.
-        
-        
+        active_=rospy.get_param("/active")		# Update of the modality param value
+
         moveBindings_temp = moveBindings.copy()		# Coping the actual moveBindings dictionary into a temp one.
         
-        if active_ == 3:
+        
+        # If the third or second modalities are active
+        if active_ == 2 or active_ == 3:		
         	
             if flag_2 == 0:
-            	print("\033[1;34;40m ACTIVE MODALITY 3 \033[0;37;40m")
+            	print("\033[1;34;40m ACTIVE MODALITY "+ str(active_) +" \033[0;37;40m")
+            	
             flag_2 = 1
             key = getKey(key_timeout)
-            
-            
-            new_dict(moveBindings_temp)
 
+            new_dict(moveBindings_temp)				# Calculating a new dict. takeing care of the messages recived by the avoidence node.
+            
+            
             if key in moveBindings_temp.keys():
 
                 x = moveBindings_temp[key][0] 
@@ -312,8 +303,8 @@ if __name__=="__main__":
 
         else:
             if flag == 1:
-                pub_thread.my_stop() 
-                print("\033[1;31;40m STOP MODALITY 3 \033[0;37;40m")
+                pub_thread.stop_motion() 
+                print("\033[1;31;40m STOP TELEOP MODALITY\033[0;37;40m")
             flag = 0
             flag_2 = 0
 

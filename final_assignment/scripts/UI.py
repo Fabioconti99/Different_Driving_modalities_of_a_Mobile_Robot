@@ -20,7 +20,7 @@ The following numbers rappresent the input the user has to insert in the UI to a
 
 2: This driving option implements a simple teleop_key type of interface that will let the user drive the robot through the pressing of certain keyboard keys.  
 
-3: The last modality implements a similar interface to the previous one but it also adds an obstacle avoidence capability. this added feature will prevent the user to drive the robot into a wall.
+3: The last modality adds an avoidence capability to the previous one. This added feature will prevent the user to drive the robot into a wall.
 ''' 
 
 def main():

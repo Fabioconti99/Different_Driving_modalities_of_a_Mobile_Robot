@@ -16,7 +16,7 @@ The architecture should be able to get the user request, and let the robot execu
 The user will be able to change the driving modality through a **UI interface**:
 * pressing **[1]** the interface will ask the user to insert the *x* and *y* coordinates. The robot will eventually try to drive autonomously to those coordinates.
 * pressing **[2]** the UI will activate a simple *teleop_key* interface that will let the user drive the robot with keyboard inputs.
-* pressing **[3]** the UI will activate a similar modality to the second one but the user will be assisted by a **collision avoidence** layer that will prevent the robot to hit the walls if it gets too close to them. 
+* pressing **[3]** the UI will add to the previous modality an extra a driving assistency feature. The user will be assisted by a **collision avoidence** layer that will prevent the robot to hit the walls if it gets too close to them. 
 
 The software will rely on the `move_base` and `gmapping` pakages for localizing the robot and plan the motion.
 
@@ -75,7 +75,9 @@ The **four scripts** provided are the following:
 
 * my_teleop_twist_keyboard: Which will let the user directly drive the robot with keyboard inputs.
 
-* teleop_avoid.py: The last modality implements a similar interface to the previous one but it also adds an obstacle avoidence capability. this added feature will prevent the user to drive the robot into a wall.
+* teleop_avoid.py: Which will let the user directly drive the robot with keyboard inputs.
+
+* avoidence.py: The last modality adds an obstacle avoidence capability to the second modality thanks to the custom message `Avoid.msg`. This added feature will prevent the user to drive the robot into a wall.
 
 ## Running the simulation
 
@@ -96,4 +98,26 @@ This kind of execution needs the Xterm terminal to be installed. If the it's not
 
 sudo apt-get install -y xterm
 ```
+------
+NODES Description
+-------------------
+
+## UI node
+
+This node controls the robot's driving capabilities inside the enviroment. It will command the robot to drive with a certain **Modality** inside the Gazebo map. Thanks to this node, the User will be able to interact with the simulation choosing the driving bod throgh certain keyboard inputs.
+
+Driving modalities related to their keyboard inputs:
+
+* The keyboard input **[1]** will start the autonomous drive towards a certain locatin in the map choosen by the user.
+* The keyboard input **[2]** will start a simple teleop-key interface.
+* The keyboard input **[3]** will add to the previus interface an avoidence layer.
+
+Thanks to the `launch_nodes.launch` launch file, I added **three parameters** to the project for managing the *different activation state* of all the nodes involved in the project.
+The three parametrs are:
+
+* **Active**:
+* **Posion x**:
+* **Position Y **:
+
+
 

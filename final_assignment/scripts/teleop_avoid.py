@@ -35,6 +35,7 @@ ok_left = True
 ok_right = True
 ok_straight = True
 
+# Dictionary for moving commands
 moveBindings = {
         'i':(1,0,0,0),
         'j':(0,0,0,1),
@@ -42,8 +43,8 @@ moveBindings = {
         'k':(-1,0,0,0),
     }
 
-#moveBindings_temp = {}
 
+# Dictionary for speed commands
 speedBindings={
         'q':(1.1,1.1),
         'z':(.9,.9),
@@ -106,13 +107,14 @@ class PublishThread(threading.Thread):
 		
     def my_stop(self):
         twist = Twist()
+        # Publish stop message when thread exits.
         twist.linear.x = 0
         twist.linear.y = 0
         twist.linear.z = 0
         twist.angular.x = 0
         twist.angular.y = 0
         twist.angular.z = 0
-        # Publish.
+        
         self.publisher.publish(twist)
 
     def run(self):
@@ -155,28 +157,29 @@ def getKey(key_timeout):
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
     return key
 
-def clbk_laser(msg):
-
+# Call back function needed for checking if any wall is close to the robot and it what direction the wall is.
+def cb_avoid(msg):
 
     global ok_left
     global ok_right
     global ok_straight
 
-    right = min(min(msg.ranges[0:143]), 1)
-    front = min(min(msg.ranges[288:431]), 1)
-    left = min(min(msg.ranges[576:719]), 1)
-
-    if right != 1.0:
+    right = min(msg.ranges[0:143])
+    front = min(msg.ranges[288:431])
+    left = min(msg.ranges[576:719])
+					
+					# If the robot is close to the right of the robot.
+    if right < 1.0:
         ok_right =False
     else:
         ok_right =True
-
-    if front != 1.0:
+					# If the robot is close to the front of the robot.
+    if front < 1.0:
         ok_straight =False
     else:
         ok_straight =True
-
-    if left != 1.0:
+					# If the robot is close to the left of the robot.
+    if left < 1.0:
         ok_left =False
     else:
         ok_left =True
@@ -184,48 +187,39 @@ def clbk_laser(msg):
 
 
 
-
-def pop_dict(dictionary):
+# Function needed for preventing a certain command if the direction is blocked.
+def new_dict(dictionary):
 
     global ok_left
     global ok_right
     global ok_straight
     
-
+	# If any of the flags for checking if the wall are turned on in any combinations, the function will disable the corrisponding directions command.
     if not ok_straight and not ok_right and not ok_left:
-        popped1 = dictionary.pop('i')
-        popped2 = dictionary.pop('j')
-        popped3 = dictionary.pop('l')
-        print("\rCommand " + str(popped1) + " disabled")
-        print("\rCommand " + str(popped2) + " disabled")
-        print("\rCommand " + str(popped3) + " disabled")
+        dictionary.pop('i')
+        dictionary.pop('j')
+        dictionary.pop('l')
+        
     elif not ok_left and not ok_straight and ok_right:
         popped1 = dictionary.pop('i')
         popped2 = dictionary.pop('j')
-        print("\rCommand " + str(popped1) + " disabled")
-        print("\rCommand " + str(popped2) + " disabled")
+        
     elif ok_left and not ok_straight and not ok_right:
         popped1 = dictionary.pop('i')
         popped2 = dictionary.pop('l')
-        print("\rCommand " + str(popped1) + " disabled")
-        print("Command " + str(popped2) + " disabled")
+        
     elif not ok_left and ok_straight and not ok_right:
         popped1 = dictionary.pop('l')
         popped2 = dictionary.pop('j')
-        print("\rCommand " + str(popped1) + " disabled")
-        print("\rCommand " + str(popped2) + " disabled")
+        
     elif ok_left and not ok_straight and ok_right:
         popped1 = dictionary.pop('i')
-        print("\rCommand " + str(popped1) + " disabled")
+        
     elif not ok_left and ok_straight and ok_right:
         popped1 = dictionary.pop('j')
-        print("\rCommand " + str(popped1) + " disabled")
+        
     elif ok_left and ok_straight and not ok_right:
         popped1 = dictionary.pop('l')
-        print("\rCommand " + str(popped1) + " disabled")
-
-
-
 
 
 
@@ -236,15 +230,19 @@ def vels(speed, turn):
     return "currently:\tspeed %s\tturn %s " % (speed,turn)
 
 if __name__=="__main__":
-    rospy.init_node('teleop_avoid')
-    active_=rospy.get_param("/active")
-    flag = 1
+    rospy.init_node('teleop_avoid') 		# initialization of the node.
+    active_=rospy.get_param("/active")		# Assignment of the active param value to a local variable.
+    flag = 1						# Flag variable used to keep track of the current state.
+    flag_2 = 0						# Flag variable used to keep track of the current state.
+    
+    # Setting up some initial parameters.
     settings = termios.tcgetattr(sys.stdin)
     speed = rospy.get_param("~speed", 0.5)
     turn = rospy.get_param("~turn", 1.0)
     repeat = rospy.get_param("~repeat_rate", 0.0)
     key_timeout = rospy.get_param("~key_timeout", 0.1)
-    sub = rospy.Subscriber('/scan', LaserScan, clbk_laser)
+    sub = rospy.Subscriber('/scan', LaserScan, cb_avoid)
+    
     if key_timeout == 0.0:
         key_timeout = None
 
@@ -255,18 +253,22 @@ if __name__=="__main__":
     z = 0
     th = 0
     status = 0
-    flag_2 = 0
 
     rate = rospy.Rate(5)
     pub_thread.wait_for_subscribers()
     pub_thread.update(x, y, z, th, speed, turn)
     moveBindings_temp = {}
-    print(msg)
-    print(vels(speed,turn))
+    
+    
+    print(msg)				# Print of the initial message.
+    print(vels(speed,turn))		# Print of the robot's state info.
+    
     while(1):
         	
-        active_=rospy.get_param("/active")
-        moveBindings_temp = moveBindings.copy()
+        active_=rospy.get_param("/active")		# Update of the modality param value.
+        
+        
+        moveBindings_temp = moveBindings.copy()		# Coping the actual moveBindings dictionary into a temp one.
         
         if active_ == 3:
         	
@@ -276,7 +278,7 @@ if __name__=="__main__":
             key = getKey(key_timeout)
             
             
-            pop_dict(moveBindings_temp)
+            new_dict(moveBindings_temp)
 
             if key in moveBindings_temp.keys():
 

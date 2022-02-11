@@ -122,6 +122,8 @@ The three parametrs are:
 
 The UI node will also keep the user updated on the current modality thanks to the on screen messages sent at every state switch. Some flags will keep track of the current modality based on the UI inputs.
 
+The follwing graph rappresents the whole UI structure:
+
 
 ------
 ## Autonomous drive mode: go_to_desired_pos.py
@@ -338,18 +340,112 @@ The associated values optimize the UI making it easier for the user to interact 
 The following table shows the commands related to each keyboard input:
 
 
-The `new_dict()` function uses the `pop` command to directly remove some keys from the dictioray. The removal will happen accordingly to the values retrived by the previously mentioned callback to the `custom_controller` topic.
+The `new_dict()` function uses the `pop` command to directly remove some keys from the dictioray. The removal will happen accordingly to the values retrived by the previously mentioned callback to the `custom_controller` topic. The values retrived by the teleop node are relocated in the following local variables:
+
+* `ok_right`:
+    * 0 = the wall is close to the right of the robot. The user will not be able to turn right. 
+    * 0 = the wall is close to the right of the robot. The user will not be able to turn right. 
+
+* `ok_left`:
+    * 0 = the wall is close to the left of the robot. The user will not be able to turn left. 
+    * 0 = the wall is close to the left of the robot. The user will not be able to turn right.
+    
+* `ok_straight`:
+    * 0 = the wall is close to the front of the robot. The user will not be able to drive straight. 
+    * 0 = the wall is close to the front of the robot. The user will not be able to drive straight.
+    
 The following scheme shows all the combinations that the program considers for the wall avoidence:
 
 
+At every cycle, the dictionary will switch to a temporary one that will consider the just "popped" commands.
 
 ------
-## avoidence feature: avoidence.py
+## Avoidence feature: avoidence.py
+
+This node has the aim of activating a security feature to the driving of the teleop_key modality. Thanks to the **subscription** to the `/laser_scan` topic the node will be able to get info about the robot's surroundings. The subscription to the topic will give back to the subscribed callback the `ranges[0,720]` array. This data structure contains the distance values between the robot and the surrondings wall for a span of 180º degrees infront of the robot. The array simulates the values that an actual set of lasers would retrive in a real enviroment.
+The node will later elaborate the data acquired to publish it on the `custom_controller` custtom topic through the `Avoid.msg` custom message.
+
+### Main functions used
+
+`cb_avoid(msg)` is the callback function used to acquire and manage the data comming from the `/lase_scan` subscription. Once the `ranges[]` array is acquired, the data is devided in 3 sub ranges:
+
+* From 0 to 143: which rappresents the right side of the scanned area.
+* From 288 to 431: which rappresents the front side of the scanned area.
+* From 576 to 719: which rappresents the left side of the scanned area.
+
+the following picture gives a graphical rappresentation of the 3 sub arrays:
+
+
+To the local variables `right`,`front` and `left` is assignd the smaller value retrived by their corrispondent array. If one of these values is smaller than 1 an if-statement will set the corrispondent `ok_(right, front, left)` global variable to 0. These variables will be later sent to the `custom_controller` custom topic through the `Avoid.msg` custom message by the `main` function.
+If the `active` parameter is not set to 3 the node will just publish the values 1 to simulate the idle state of the modality.
+
+```python
+def cb_avoid(msg):
+
+    global ok_left
+    global ok_right
+    global ok_straight
+    
+    active_=rospy.get_param("/active")        # Assignment of the active param value to a local variable.
+    if active_ == 3:
+        
+        right = min(msg.ranges[0:143])      # right checking laser span.
+        front = min(msg.ranges[288:431])    # front checking laser span.
+        left = min(msg.ranges[576:719])     # left checking laser span.
+        
+        if right < 1.0:         # If the robot is close to the right of the robot.
+            ok_right = 0
+        else:
+            ok_right = 1
+        if front < 1.0:         # If the robot is close to the front of the robot.
+            ok_straight = 0
+        else:
+            ok_straight = 1
+        if left < 1.0:          # If the robot is close to the left of the robot.
+            ok_left = 0
+        else:
+            ok_left = 1
+    else:                       # Let all the direction good to go if the modality 3 is turned off.
+        ok_right = 1
+        ok_straight = 1
+        ok_left = 1
+```
+
+The `main` function is only used to initializing the publiusher and the subscriber istsances and publishing the avoidence message on the `custom_contrller` topic. The while loop will spinn at a 10hz rate thanks to the `sleep` function. 
+
+```python
+def main():
+
+    global ok_left
+    global ok_right
+    global ok_straight
+    
+    pub = rospy.Publisher('custom_controller', Avoid, queue_size=10)    # Publisher.
+    rospy.init_node('avoidence')                                        # Initialization of the node.
+    sub = rospy.Subscriber('/scan', LaserScan, cb_avoid)                # Sub to the '/scan' topic.
+    rate = rospy.Rate(5)                                                #10hz
+    
+    pub_msg = Avoid()
+    while not rospy.is_shutdown():
+        pub_msg.left = ok_left          # Assigning the messages fields
+        pub_msg.right = ok_right        # Assigning the messages fields
+        pub_msg.front = ok_straight     # Assigning the messages fields
+        
+        pub.publish(pub_msg)        # publishing the messages fields
+        rate.sleep()                # 10hz delay.
+
+```
+
+The whole ROS nodes net is complitelly indipendent form this node. if by any chance this node woulden't start, the project would still run fine.
 
 
 
+RQT-Graph
+--------------------
 
 
+Conclusions
+-----------------
+To take care of all the project's requests, I choose to manage the code's structure with modular logic. Thanks to this approach, I was able to get to the end of the assignment with a schematic structure of the project concerning 4 Ros nodes overall.  Thanks to the well-chosen parameters given to the controlling node, the robot can autonomously drive around the circuit for many laps at different velocities. The whole implementation makes the robot capable of lapping flawlessly at the highest velocity pick of 11-12 units. 
 
-
-
+This project was my first approach to the ROS1 workflow. Working on this assignment, I gained knowledge about the basic concepts of ROS such as managing *callBack* functions, implementing new *services* and *messages* and building a modular and organized *package* structure. 

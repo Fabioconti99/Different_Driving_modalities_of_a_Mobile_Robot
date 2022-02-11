@@ -102,12 +102,13 @@ sudo apt-get install -y xterm
 NODES Description
 -------------------
 
-## UI node
+## UI node: UI.py
 
-This node controls the robot's driving capabilities inside the enviroment. It will command the robot to drive with a certain **Modality** inside the Gazebo map. Thanks to this node, the User will be able to interact with the simulation choosing the driving bod throgh certain keyboard inputs.
+This node controls the robot's driving capabilities inside the enviroment. The **UI function** will command the robot to drive with a certain **Modality** inside the Gazebo map. Thanks to this node, the User will be able to interact with the simulation choosing the driving bod throgh certain keyboard inputs.
 
 Driving modalities related to their keyboard inputs:
 
+* The keyboard input **[0]** resets the current driving modality.
 * The keyboard input **[1]** will start the autonomous drive towards a certain locatin in the map choosen by the user.
 * The keyboard input **[2]** will start a simple teleop-key interface.
 * The keyboard input **[3]** will add to the previus interface an avoidence layer.
@@ -115,9 +116,159 @@ Driving modalities related to their keyboard inputs:
 Thanks to the `launch_nodes.launch` launch file, I added **three parameters** to the project for managing the *different activation state* of all the nodes involved in the project.
 The three parametrs are:
 
-* **Active**:
-* **Posion x**:
-* **Position Y **:
+* **Active**: This parameter manages the current state of the project's ROS node chain. Once the program is launched, the parameter is set to be in *idle state* (0 state). In the beginning one of the nodes will be in their active state. The UI node is capable of managing the change of value of this parameter thanks to the retrieved user input. A simple legend will tell the user what button to press for running a certain driving modality. The user input will change the value of the parameter and all the nodes will either keep their current idle state or switch to a running state. An If-Statement inside every node manages this modality switch.
+
+* **Posion X and Position Y**: Also this two parameters are retrived by an input user managed in the UI node. Once the user will select the **first modality [1]** the UI interface will also ask for an X and Y coordinate. This data rappresents the position we want the robot to go to. If the user wants to stop the robot's motion he will only need to either input another driving modality or to set the project idle state.
+
+The UI node will also keep the user updated on the current modality thanks to the on screen messages sent at every state switch. Some flags will keep track of the current modality based on the UI inputs.
+
+
+------
+## Autonomous drive mode: go_to_desired_pos.py
+
+This node implements the autonomous driving capability. The script exploits an **action client** (*actionlib* library) istance to establish a direct comunication with the mobile robot and set and cancel location goals.
+
+The Action Client-Service communicate via a "ROS Action Protocol", which is built on top of ROS messages. The client and server then provide a simple API for users to request goals (on the client side) or to execute goals (on the server side) via function calls and callbacks. 
+Through out the coding of this node I implemented only the *Actionclient* side of the whole structure using the already existing server of the following action messages:
+
+* `MoveBaseAction`
+* ` MoveBaseGoal`
+
+The following picture shows a graphical rappresentation of the ROS-Action protocol: 
+
+
+* *goal*: used to send new goals to server
+* *cancel*: used to send cancel requests to server
+* *status*: used to notify clients on the current state of every goal in the system
+* *feedback*: used to send clients periodic auxiliary information for a goal
+* *result*:  used to send clients one-time auxiliary information about the completion of a goal
+
+In order for the client and server to communicate, I should define a few messages on which they communicate. This defines the Goal, Feedback, and Result messages with which clients and servers communicate. In the code code I only used the Goal message beacause that was the one message needed for fullfilling the project aim. 
+
+Thanks to the Actionlib feature the goal message can be sent to an ActionServer by an ActionClient. In the case of my project, the goal is to move the robot's base position, the goal would be a MveBaseGoal message that contains information about where the robot should move to in the world. For controlling all the robot position in space, the goal would contain the *target_pose* parameters (stamp, orientation, target position, etc).
+
+ ### Main functions used
+ 
+the following function sets the standard istances of the position I want to achive and it also initialize the client side of the action:
+
+```python
+def action_client_init():
+
+    global client 
+    global goal 
+    
+    client = actionlib.SimpleActionClient('move_base',MoveBaseAction) # Initialization of the action client.
+    client.wait_for_server()                            # Waiting for the server to get ready.
+    
+    goal = MoveBaseGoal()                         # Initialization of the goal message.
+    goal.target_pose.header.frame_id = "map"            # Setting up some parameters of the goal message.
+    goal.target_pose.header.stamp = rospy.Time.now()
+    goal.target_pose.pose.orientation.w = 1.0
+    
+# Call Back used for setting up a timeout to the robot's current task.
+def my_callback_timeout(event):
+    if active_==1:
+        print ("\033[1;31;40m Goal time expired\033[0;37;40m :" + str(event.current_real)+st)
+        print("The robot didn't reach the desired position target within a 1min time span\n")
+        rospy.set_param('active', 0)
+```
+
+Once the node gets to its active state, the retrived info on the goal position will be retrived from the newly set parameters and inserted inside the goal message structure. This operation is taken care by the followiong "set-goal" function: 
+
+```python
+def action_client_set_goal():
+
+    goal.target_pose.pose.position.x = desired_position_x
+    goal.target_pose.pose.position.y = desired_position_y
+    print("\033[1;33;40m START AUTONOMOUS DRIVE"+st+"\033[0;37;40m \n")
+    client.send_goal(goal,done_cb)
+```
+The following image shows the Rviz graphical interface once the goal is set:
+
+
+
+The argument `done_cb` of the `send_goal` function is a special call-back function needed for retriving info on the goal reaching *status*. This function retrives info directly from the server side. There are many different values associated to the status parameter during execution ending. The only one used in the code is the *status 3* related to the goal achivement:
+
+```python
+def done_cb(status,result):
+    
+    global flag_goal
+    
+    if status==3:
+        print("\033[1;34;40m goal achived!"+st+"\033[0;37;40m \n")
+        flag_goal = 1
+```
+
+Since the info retrived by this function is strictly determined by the server, I choose to not retrive any other status. There exist a status for retriving also a *timeout* ending for the robot. I decided to not use it because the actual time is set directly by the server.
+The folliwing function sets a timer expiration goal that is localy set to 1 minute. Once it expires it will automatically cancel the goal.
+
+```python
+def my_callback_timeout(event):
+    if active_==1:
+        print ("\033[1;31;40m Goal time expired\033[0;37;40m :" + str(event.current_real)+st)
+        print("The robot didn't reach the desired position target within a 1min time span\n")
+        rospy.set_param('active', 0)
+        
+```
+
+Thorough out the whole execution, thanks to the following callback, the program will print the actual position on screen with a 10hz rate. The actual position is not retrived by the *action feedback* but from a subscription to the odometry topic `/odom`. 
+
+```python
+def clbk_odom(msg): 
+    global position_
+    position_ = msg.pose.pose.position
+    
+```
+
+Picture of the standard GUI window of the first modality:
+
+
+The normal `cancel_goal` is activated once the robot gets back into its idle state. The cancel call is managed by all the flags that determine the current state of the process.
+
+```python
+# The active value is not set to 1
+else:
+    # Initial idle state 
+    if flag == 0 and flag_2==0:
+        
+        print("\033[1;31;40m STOP MODALITY 1 \033[0;37;40m \n")
+        flag = 1
+    
+    # Idle state the node will get to once the robot gets stopped by the user.
+    if flag == 0 and flag_2==1:
+        
+        # Flag needed to know if the goal is reached or not
+        if flag_goal==1:
+            # If the goal is reached I will not cancel the goal because. 
+            print("\033[1;31;40m STOP MODALITY 1 "+st+"\033[0;37;40m")
+            flag = 1
+            flag_2 = 0
+            flag_goal = 0
+    
+        else:
+            # If the goal is not reached once the user switches modality or the time expires with the time-out.
+            print("\033[1;31;40m GOAL CANCELED, STOP MODALITY 1 "+st+"\033[0;37;40m")
+            client.cancel_goal()
+            flag = 1
+            flag_2 = 0
+    
+```
+
+If the `active` param is set to a value differrent than 1, the program will at first execute one of if-sections and it will later just idle waiting for `the active` param to get to 1. 
+
+
+------
+## KeyBoard input drive mode: teleop_avoid.py
+
+The script is based on the standard ROS teleop_twist_keyboard.py 
+
+------
+## avoidence feature: avoidence.py
+
+
+
+
+
 
 
 

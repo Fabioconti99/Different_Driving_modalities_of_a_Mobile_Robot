@@ -260,7 +260,88 @@ If the `active` param is set to a value differrent than 1, the program will at f
 ------
 ## KeyBoard input drive mode: teleop_avoid.py
 
-The script is based on the standard ROS teleop_twist_keyboard.py 
+The script is based on the standard ROS teleop_twist_keyboard.py.
+This node is constantly checking which keys are pressed on a PC keyboard and based on the keys pressed, publishes twist messages on `/cmd_vel` topic. Twist message defines what should be the linear and rotational speeds of a mobile robot.
+
+ ### Main functions used
+ 
+I added some functions and changes to the code to merge it with the `avoidence.py` publisher and to manage the alternancy of the activation state.
+Just like all the other programs, I had to manage the alternancy of the *idle* to the *active* state through the use of an If-statement. Since the node also includes the functionalities of the third modality, the statment will set the node to an active modality if the `active` param is either set to 3 or 2.
+I added a new function named `stop_motion` to the `PublishThread` class. This function will make the robot stop once the driving modality gets switched. The function will set the linear and angular velocity to 0 with the `twist` message through the `/cmd_vel` topic. 
+
+```python
+def stop_motion(self):
+    twist = Twist()
+    # Publish stop message when thread exits.
+    twist.linear.x = 0
+    twist.linear.y = 0
+    twist.linear.z = 0
+    twist.angular.x = 0
+    twist.angular.y = 0
+    twist.angular.z = 0
+            
+    self.publisher.publish(twist)
+```
+
+The node **subscribes** to the custom topic `custom_controller` implemented for publishing the `Avoid.msg` message containing info about the walls surroundings the robot. The callback subscribed sets some local variables equals to the pubblished fields of the custom message. These variables will later be used in the following function to change some keyboards inputs to prevent the user to drive the robot into walls. 
+
+```python
+def new_dict(dictionary):
+
+    global ok_left
+    global ok_right
+    global ok_straight
+    
+    # If any of the flags for checking if the wall are turned on in any combinations, the function will disable the corrisponding directions command.
+    if not ok_straight == 1 and not ok_right == 1 and not ok_left == 1:
+        dictionary.pop('i')
+        dictionary.pop('j')
+        dictionary.pop('l')
+        
+    elif not ok_left == 1 and not ok_straight == 1 and ok_right == 1:
+        dictionary.pop('i')
+        dictionary.pop('j')
+        
+    elif ok_left == 1 and not ok_straight == 1 and not ok_right == 1:
+        dictionary.pop('i')
+        dictionary.pop('l')
+        
+    elif not ok_left == 1 and ok_straight == 1 and not ok_right == 1:
+        dictionary.pop('l')
+        dictionary.pop('j')
+        
+    elif ok_left == 1 and not ok_straight == 1 and ok_right == 1:
+        dictionary.pop('i')
+        
+    elif not ok_left == 1 and ok_straight == 1 and ok_right == 1:
+        dictionary.pop('j')
+        
+    elif ok_left == 1 and ok_straight == 1 and not ok_right == 1:
+        pdictionary.pop('l')
+```
+
+The keyboard input set is managed by a **dictionary**:
+A dictionary is *python* unordered and changeable collection of data values that holds key-value pairs. Each key-value pair in the dictionary maps the key to its associated value making it more optimized.
+In the standard `teleop_twist_keyboard`, a dictionary is used to collect the buttons for the all the possible robot's movements. In my version of the node, some of these keys are ommited to code an easier implementation of the avoidence feature. The followiong istance is the dictioary used in the node:
+
+```python
+# Dictionary for moving commands
+moveBindings = {
+        'i':(1,0,0,0),
+        'j':(0,0,0,1),
+        'l':(0,0,0,-1),
+        'k':(-1,0,0,0),
+    }
+```
+The associated values optimize the UI making it easier for the user to interact with the simulation. Thanks to these values the node will public the right values to the `/cmd_vel` topic for making the robot move accordingly with the input.
+
+The following table shows the commands related to each keyboard input:
+
+
+The `new_dict()` function uses the `pop` command to directly remove some keys from the dictioray. The removal will happen accordingly to the values retrived by the previously mentioned callback to the `custom_controller` topic.
+The following scheme shows all the combinations that the program considers for the wall avoidence:
+
+
 
 ------
 ## avoidence feature: avoidence.py

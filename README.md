@@ -31,11 +31,13 @@ The package will be tested on a simulation of a mobile robot driving inside of a
 
 Picture of the **Gazebo Enviroment**:
 
-![alt text](https://github.com/Fabioconti99/RT1_Assignment_2/blob/main/images/map.png) 
+![Schermata 2022-02-12 alle 00 30 58](https://user-images.githubusercontent.com/91262561/153684461-be2e2074-d17e-4f01-acf0-dd8481ec07d5.png)
+
 
 Picture of the **Robot inside the enviroment**:
 
-![alt text](https://github.com/Fabioconti99/RT1_Assignment_2/blob/main/images/map.png) 
+![IMG_0034](https://user-images.githubusercontent.com/91262561/153683955-682e4ca8-9282-4c45-98f9-52ef0e3a186b.GIF)
+
 
 --------
 
@@ -124,6 +126,8 @@ The UI node will also keep the user updated on the current modality thanks to th
 
 The follwing graph rappresents the whole UI structure:
 
+![ Diagramma_vuoto](https://user-images.githubusercontent.com/91262561/153684103-0222448b-aeac-4925-bcea-8fbc7cdf96e8.png)
+
 
 ------
 ## Autonomous drive mode: go_to_desired_pos.py
@@ -137,6 +141,8 @@ Through out the coding of this node I implemented only the *Actionclient* side o
 * ` MoveBaseGoal`
 
 The following picture shows a graphical rappresentation of the ROS-Action protocol: 
+
+<img width="674" alt="Schermata 2022-02-11 alle 11 33 10" src="https://user-images.githubusercontent.com/91262561/153684323-a75025f3-28f4-4ad2-82e6-bd0a057d9c3a.png">
 
 
 * *goal*: used to send new goals to server
@@ -187,7 +193,7 @@ def action_client_set_goal():
 ```
 The following image shows the Rviz graphical interface once the goal is set:
 
-
+![Schermata 2022-02-12 alle 00 31 15](https://user-images.githubusercontent.com/91262561/153684513-037947ca-4470-48de-8319-53d2aab4cd07.png)
 
 The argument `done_cb` of the `send_goal` function is a special call-back function needed for retriving info on the goal reaching *status*. This function retrives info directly from the server side. There are many different values associated to the status parameter during execution ending. The only one used in the code is the *status 3* related to the goal achivement:
 
@@ -339,6 +345,8 @@ The associated values optimize the UI making it easier for the user to interact 
 
 The following table shows the commands related to each keyboard input:
 
+<img width="521" alt="Schermata 2022-02-11 alle 21 25 55" src="https://user-images.githubusercontent.com/91262561/153684181-01d41767-99be-40df-9fa0-67760e7d7c83.png">
+
 
 The `new_dict()` function uses the `pop` command to directly remove some keys from the dictioray. The removal will happen accordingly to the values retrived by the previously mentioned callback to the `custom_controller` topic. The values retrived by the teleop node are relocated in the following local variables:
 
@@ -355,6 +363,8 @@ The `new_dict()` function uses the `pop` command to directly remove some keys fr
     * 0 = the wall is close to the front of the robot. The user will not be able to drive straight.
     
 The following scheme shows all the combinations that the program considers for the wall avoidence:
+
+![Schermata 2022-02-11 alle 21 07 11](https://user-images.githubusercontent.com/91262561/153684224-6a05a9d8-8478-4a84-b2cf-31c374bfd92b.png)
 
 
 At every cycle, the dictionary will switch to a temporary one that will consider the just "popped" commands.
@@ -374,6 +384,8 @@ The node will later elaborate the data acquired to publish it on the `custom_con
 * From 576 to 719: which rappresents the left side of the scanned area.
 
 the following picture gives a graphical rappresentation of the 3 sub arrays:
+
+<img width="851" alt="Schermata 2022-02-12 alle 00 08 48" src="https://user-images.githubusercontent.com/91262561/153684283-7ee3d999-50b8-4779-b83c-d590a64a4b2b.png">
 
 
 To the local variables `right`,`front` and `left` is assignd the smaller value retrived by their corrispondent array. If one of these values is smaller than 1 an if-statement will set the corrispondent `ok_(right, front, left)` global variable to 0. These variables will be later sent to the `custom_controller` custom topic through the `Avoid.msg` custom message by the `main` function.
@@ -411,7 +423,7 @@ def cb_avoid(msg):
         ok_left = 1
 ```
 
-The `main` function is only used to initializing the publiusher and the subscriber istsances and publishing the avoidence message on the `custom_contrller` topic. The while loop will spinn at a 10hz rate thanks to the `sleep` function. 
+The `main` function is only used to initializing the publiusher and the subscriber istsances and publishing the avoidence message on the `custom_contrller` topic. The while loop will spin at a 10hz rate thanks to the `sleep` function. 
 
 ```python
 def main():

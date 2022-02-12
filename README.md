@@ -230,6 +230,8 @@ def clbk_odom(msg):
 
 Picture of the standard GUI window of the first modality:
 
+<img width="312" alt="Schermata 2022-02-12 alle 01 01 07" src="https://user-images.githubusercontent.com/91262561/153687536-b5add6e5-5d3f-4e2a-8362-17928206ef0e.png">
+
 
 The normal `cancel_goal` is activated once the robot gets back into its idle state. The cancel call is managed by all the flags that determine the current state of the process.
 
@@ -455,6 +457,7 @@ The whole ROS nodes net is complitelly indipendent form this node. if by any cha
 RQT-Graph
 --------------------
 
+<img width="983" alt="Schermata 2022-02-12 alle 00 47 12" src="https://user-images.githubusercontent.com/91262561/153687510-a76bef7d-8bf8-467a-bc9b-d5e7da678065.png">
 
 Conclusions
 -----------------

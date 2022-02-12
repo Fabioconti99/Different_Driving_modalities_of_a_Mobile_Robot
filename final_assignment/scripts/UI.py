@@ -1,13 +1,6 @@
 #!/usr/bin/python3
 import rospy
-import actionlib
-from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from actionlib_msgs.msg import GoalID 
-from geometry_msgs.msg import Twist, Point
-from nav_msgs.msg import Odometry
-from tf import transformations
 from std_srvs.srv import *
-import time
 import math
 '''
 UI function:
@@ -22,6 +15,28 @@ The following numbers rappresent the input the user has to insert in the UI to a
 
 3: The last modality adds an avoidence capability to the previous one. This added feature will prevent the user to drive the robot into a wall.
 ''' 
+
+msg = """
+\033[1;37;40m
+Reading from the keyboard  and managing into the UI node!
+---------------------------
+Driving modalities:
+
+-[0]: idle state.
+-[1]: Autonomous drive towards a desired position.
+-[2]: Teleop keyboard interface.
+-[3]: Avoidence feature for modality 2.
+
+anything else : stop
+
+q/z : increase/decrease max speeds by 10%
+w/x : increase/decrease only linear speed by 10%
+e/c : increase/decrease only angular speed by 10%
+
+CTRL-C to quit
+\033[0;37;40m
+
+""" 
 
 def main():
 	
@@ -91,5 +106,6 @@ def main():
 
 
 if __name__ == '__main__':
+	print(msg)
 	main()
 

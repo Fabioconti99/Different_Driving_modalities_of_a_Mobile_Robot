@@ -459,8 +459,19 @@ RQT-Graph
 
 <img width="983" alt="Schermata 2022-02-12 alle 00 47 12" src="https://user-images.githubusercontent.com/91262561/153687510-a76bef7d-8bf8-467a-bc9b-d5e7da678065.png">
 
+
+Possible improvements
+-----------------
+
+* As a future improvements I'd like to implement a different interface between the Action client and Action service comunication. The position in the enviroment could be retived by the Action service through a use of **feedback** Callback. The **statuas** Callback could have distinguished more status values and it could have handeled different situation that could refined the autonomous driving capability.
+* It is also possible to implement a custom Action. I could use a different service to implement a finer control of the robot trough clients requests.
+* Avoidence should be written as "avoidance".
+
+
 Conclusions
 -----------------
-To take care of all the project's requests, I choose to manage the code's structure with modular logic. Thanks to this approach, I was able to get to the end of the assignment with a schematic structure of the project concerning 4 Ros nodes overall.  Thanks to the well-chosen parameters given to the controlling node, the robot can autonomously drive around the circuit for many laps at different velocities. The whole implementation makes the robot capable of lapping flawlessly at the highest velocity pick of 11-12 units. 
+To take care of all the project's requests, I choose to manage the code's structure with modular logic. Thanks to this approach, I was able to get to the end of the assignment with a schematic structure of the project concerning only 4 extra Ros nodes.  Thanks to the parameters introduced by the launch file, the robot can easily change driving modality and quckly switch between them. The whole implementation makes the robot capable of driving around the enviroment following the requested rules.
 
-This project was my first approach to the ROS1 workflow. Working on this assignment, I gained knowledge about the basic concepts of ROS such as managing *callBack* functions, implementing new *services* and *messages* and building a modular and organized *package* structure. 
+This project was my second approach to the ROS1 workflow. Working on this assignment, I gained knowledge about the concepts of ROS launch files, ROS actions, managing ROS parameters and implementing *messages* and building a modular and organized *package* structure. 
+
+(**credit to:** Luca Predieri, Francesco Pagano, Alessandro Perri, Matteo Carlone for the implementetion of the dctionary pop function of the avoidance feature)

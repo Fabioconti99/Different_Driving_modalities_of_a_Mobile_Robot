@@ -31,16 +31,16 @@ The package will be tested on a simulation of a mobile robot driving inside of a
 
 Picture of the **Gazebo Enviroment**:
 
-<p align="center">
+
 ![Schermata 2022-02-12 alle 00 30 58](https://user-images.githubusercontent.com/91262561/153684461-be2e2074-d17e-4f01-acf0-dd8481ec07d5.png)
 
-</p>
+
 
 Picture of the **Robot inside the enviroment**:
 
-<p align="center">
+
 ![IMG_0034](https://user-images.githubusercontent.com/91262561/153683955-682e4ca8-9282-4c45-98f9-52ef0e3a186b.GIF)
-</p>
+
 
 --------
 
@@ -127,10 +127,10 @@ The three parameters are:
 The UI node will also keep the user updated on the current modality thanks to the on-screen messages sent at every state switch. Some flags will keep track of the current modality based on the UI inputs.
 
 The follwing graph rappresents the whole UI structure:
-<p align="center">
+
 ![ Diagramma_vuoto](https://user-images.githubusercontent.com/91262561/153684103-0222448b-aeac-4925-bcea-8fbc7cdf96e8.png)
 
-</p>
+
 
 ------
 ## Autonomous drive mode: go_to_desired_pos.py
@@ -145,10 +145,10 @@ Through out the coding of this node I implemented only the *Actionclient* side o
 
 The following picture shows a graphical rappresentation of the ROS-Action protocol: 
 
-<p align="center">
+
 <img width="674" alt="Schermata 2022-02-11 alle 11 33 10" src="https://user-images.githubusercontent.com/91262561/153684323-a75025f3-28f4-4ad2-82e6-bd0a057d9c3a.png">
 
-</p>
+
 
 * *goal*: used to send new goals to server
 * *cancel*: used to send cancel requests to server
@@ -198,10 +198,10 @@ def action_client_set_goal():
 ```
 The following image shows the Rviz graphical interface once the goal is set:
 
-<p align="center">
+
 
 ![Schermata 2022-02-12 alle 00 31 15](https://user-images.githubusercontent.com/91262561/153684513-037947ca-4470-48de-8319-53d2aab4cd07.png)
-</p>
+
 
 The argument `done_cb` of the `send_goal` function is a special call-back function needed for retrieving info on the goal-reaching *status*. This function retrieves info directly from the server-side. There are many different values associated with the status parameter during the final portion of the execution. The only one used in the code is the *status 3* related to the goal achievement:
 
@@ -238,10 +238,10 @@ def clbk_odom(msg):
 ```
 
 Picture of the standard GUI window of the first modality:
-<p align="center">
+
 
 <img width="312" alt="Schermata 2022-02-12 alle 01 01 07" src="https://user-images.githubusercontent.com/91262561/153687536-b5add6e5-5d3f-4e2a-8362-17928206ef0e.png">
-</p>
+
 
 The normal `cancel_goal` is activated once the robot gets back into its idle state. The cancel call is managed by all the flags that determine the current state of the process.
 
@@ -356,10 +356,10 @@ moveBindings = {
 The associated values optimize the UI making it easier for the user to interact with the simulation. Thanks to these values, the node will public the right values to the `/cmd_vel` topic for making the robot move accordingly with the input.
 
 The following table shows the commands related to each keyboard input:
-<p align="center">
+
 
 <img width="521" alt="Schermata 2022-02-11 alle 21 25 55" src="https://user-images.githubusercontent.com/91262561/153684181-01d41767-99be-40df-9fa0-67760e7d7c83.png">
-</p>
+
 
 The `new_dict()` function uses the `pop` command to directly remove some keys from the dictionary. The removal will happen accordingly to the values retrieved by the previously mentioned callback to the `custom_controller` topic. The values retrieved by the teleop node are relocated in the following local variables:
 
@@ -377,9 +377,9 @@ The `new_dict()` function uses the `pop` command to directly remove some keys fr
     
 The following scheme shows all the combinations that the program considers for the wall avoidence:
 
-<p align="center">
+
 ![Schermata 2022-02-11 alle 21 07 11](https://user-images.githubusercontent.com/91262561/153684224-6a05a9d8-8478-4a84-b2cf-31c374bfd92b.png)
-</p>
+
 
 
 At every cycle, the dictionary will switch to a temporary one that will consider the just "popped" commands.
@@ -399,10 +399,10 @@ The node will later elaborate the data acquired to publish it on the `custom_con
 * From 576 to 719: which represents the left side of the scanned area.
 
 the following picture gives a graphical rappresentation of the 3 sub arrays:
-<p align="center">
+
 
 <img width="851" alt="Schermata 2022-02-12 alle 00 08 48" src="https://user-images.githubusercontent.com/91262561/153684283-7ee3d999-50b8-4779-b83c-d590a64a4b2b.png">
-</p>
+
 
 
 To the local variables `right`, `front`, and `left` are assigned the smaller value retrieved by their correspondent array. If one of these values is smaller than 1 an if-statement will set the correspondent `ok_(right, front, left)` global variable to 0. the `custom_controller` custom topic will later receive these variables through the `Avoid. msg` custom message by the `main` function.
@@ -471,9 +471,9 @@ The whole ROS nodes net is independent of this node. In case the node wouldn't s
 
 RQT-Graph
 --------------------
-<p align="center">
+
 <img width="983" alt="Schermata 2022-02-12 alle 00 47 12" src="https://user-images.githubusercontent.com/91262561/153687510-a76bef7d-8bf8-467a-bc9b-d5e7da678065.png">
-</p>
+
 
 
 Possible improvements

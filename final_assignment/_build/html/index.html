@@ -40,6 +40,9 @@
 <li><a class="reference internal" href="#">Welcome to final_assignment’s documentation!</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 <li><a class="reference internal" href="#module-scripts.UI">UI Module</a></li>
+<li><a class="reference internal" href="#go-to-desired-pos-module">go_to_desired_pos Module</a></li>
+<li><a class="reference internal" href="#module-scripts.teleop_avoid">teleop_avoid Module</a></li>
+<li><a class="reference internal" href="#module-scripts.avoidence">avoidence Module</a></li>
 </ul>
 </div>
         </div>
@@ -91,6 +94,118 @@
 <li><p><em>2</em>: This driving option implements a simple teleop_key type of interface that will let the user drive the robot through the pressing of certain keyboard keys.</p></li>
 <li><p><em>3</em>: The last modality adds an avoidence capability to the previous one. This added feature will prevent the user to drive the robot into a wall.</p></li>
 </ul>
+</dd></dl>
+
+</div>
+<div class="section" id="go-to-desired-pos-module">
+<h1>go_to_desired_pos Module<a class="headerlink" href="#go-to-desired-pos-module" title="Permalink to this headline"></a></h1>
+</div>
+<div class="section" id="module-scripts.teleop_avoid">
+<span id="teleop-avoid-module"></span><h1>teleop_avoid Module<a class="headerlink" href="#module-scripts.teleop_avoid" title="Permalink to this headline"></a></h1>
+<dl class="simple">
+<dt>Publishes to:</dt><dd><p>/cmd_vel</p>
+</dd>
+</dl>
+<p>The script is based on the standard ROS <cite>teleop_twist_keyboard.py &lt;http://wiki.ros.org/teleop_twist_keyboard&gt;</cite>.
+This node is constantly checking which keys are pressed on a PC keyboard and based on the pressed keys, publishes twist messages on the <code class="docutils literal notranslate"><span class="pre">/cmd_vel</span></code> topic. Twist message defines what should be the linear and rotational speeds of a mobile robot.</p>
+<p>I added some functions and changes to the code to merge it with the <cite>avoidence.py</cite> publisher and to manage the alternity of the activation state.
+Just like all the other programs, I had to manage the alternity of the <em>idle</em> to the <em>active</em> state through the use of an If-statement. Since the node also includes the functionalities of the third modality, the statement will set the node to an active modality if the <code class="docutils literal notranslate"><span class="pre">active</span></code> param is either set to 3 or 2.
+I added a new function named <code class="docutils literal notranslate"><span class="pre">stop_motion</span></code> to the <code class="docutils literal notranslate"><span class="pre">PublishThread</span></code> class. This function will make the robot stop once the driving modality gets switched. The function will set the linear and angular velocity to 0 with the <cite>twist</cite> message through the <code class="docutils literal notranslate"><span class="pre">/cmd_vel</span></code> topic.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="scripts.teleop_avoid.PublishThread">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">scripts.teleop_avoid.</span></span><span class="sig-name descname"><span class="pre">PublishThread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/teleop_avoid.html#PublishThread"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.teleop_avoid.PublishThread" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="scripts.teleop_avoid.PublishThread.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/teleop_avoid.html#PublishThread.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.teleop_avoid.PublishThread.run" title="Permalink to this definition"></a></dt>
+<dd><p>Method representing the thread’s activity.</p>
+<p>You may override this method in a subclass. The standard run() method
+invokes the callable object passed to the object’s constructor as the
+target argument, if any, with sequential and keyword arguments taken
+from the args and kwargs arguments, respectively.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="scripts.teleop_avoid.PublishThread.stop_motion">
+<span class="sig-name descname"><span class="pre">stop_motion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/teleop_avoid.html#PublishThread.stop_motion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.teleop_avoid.PublishThread.stop_motion" title="Permalink to this definition"></a></dt>
+<dd><p>I added this new function named <code class="docutils literal notranslate"><span class="pre">stop_motion</span></code> to the <code class="docutils literal notranslate"><span class="pre">PublishThread</span></code> class. This function will make the robot stop once the driving modality gets switched. The function will set the linear and angular velocity to 0 with the <code class="docutils literal notranslate"><span class="pre">twist</span></code> message through the <code class="docutils literal notranslate"><span class="pre">/cmd_vel</span></code> topic.
+:param self:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.teleop_avoid.cb_avoidence">
+<span class="sig-prename descclassname"><span class="pre">scripts.teleop_avoid.</span></span><span class="sig-name descname"><span class="pre">cb_avoidence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/teleop_avoid.html#cb_avoidence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.teleop_avoid.cb_avoidence" title="Permalink to this definition"></a></dt>
+<dd><p>The node <em>subscribes</em> to the custom topic <code class="docutils literal notranslate"><span class="pre">custom_controller</span></code> implemented for publishing the <cite>Avoid. msg</cite> message containing info about the walls surrounding the robot. The callback subscribed sets some local variables equal to the published fields of the custom message. The following uses these variables function to change some keyboards inputs to prevent the user to drive the robot into walls.
+:param msg:</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.teleop_avoid.moveBindings">
+<span class="sig-prename descclassname"><span class="pre">scripts.teleop_avoid.</span></span><span class="sig-name descname"><span class="pre">moveBindings</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'i':</span> <span class="pre">(1,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">0),</span> <span class="pre">'j':</span> <span class="pre">(0,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">1),</span> <span class="pre">'k':</span> <span class="pre">(-1,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">0),</span> <span class="pre">'l':</span> <span class="pre">(0,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">-1)}</span></em><a class="headerlink" href="#scripts.teleop_avoid.moveBindings" title="Permalink to this definition"></a></dt>
+<dd><p>Variables for determining which direction is allowed.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.teleop_avoid.new_dict">
+<span class="sig-prename descclassname"><span class="pre">scripts.teleop_avoid.</span></span><span class="sig-name descname"><span class="pre">new_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/teleop_avoid.html#new_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.teleop_avoid.new_dict" title="Permalink to this definition"></a></dt>
+<dd><p>The function uses the <code class="docutils literal notranslate"><span class="pre">pop</span></code> command to directly remove some keys from the dictionary. The removal will happen accordingly to the values retrieved by the previously mentioned callback to the <code class="docutils literal notranslate"><span class="pre">custom_controller</span></code> topic. The values retrieved by the teleop node are relocated in the following local variables:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><cite>ok_right</cite>:</dt><dd><ul>
+<li><p>1 = the wall is not close to the right of the robot. The user will be able to turn right.</p></li>
+<li><p>0 = the wall is close to the right of the robot. The user will not be able to turn right.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>ok_left</cite>:</dt><dd><ul>
+<li><p>1 = the wall is not close to the left of the robot. The user will be able to turn left.</p></li>
+<li><p>0 = the wall is close to the left of the robot. The user will not be able to turn right.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p><cite>ok_straight</cite>:</p></li>
+<li><p>1 = the wall is not close to the front of the robot. The user will be able to drive straight.</p></li>
+<li><p>0 = the wall is close to the front of the robot. The user will not be able to drive straight.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.teleop_avoid.ok_left">
+<span class="sig-prename descclassname"><span class="pre">scripts.teleop_avoid.</span></span><span class="sig-name descname"><span class="pre">ok_left</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#scripts.teleop_avoid.ok_left" title="Permalink to this definition"></a></dt>
+<dd><p>Variables for determining which direction is allowed.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.teleop_avoid.ok_right">
+<span class="sig-prename descclassname"><span class="pre">scripts.teleop_avoid.</span></span><span class="sig-name descname"><span class="pre">ok_right</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#scripts.teleop_avoid.ok_right" title="Permalink to this definition"></a></dt>
+<dd><p>Variables for determining which direction is allowed.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.teleop_avoid.ok_straight">
+<span class="sig-prename descclassname"><span class="pre">scripts.teleop_avoid.</span></span><span class="sig-name descname"><span class="pre">ok_straight</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#scripts.teleop_avoid.ok_straight" title="Permalink to this definition"></a></dt>
+<dd><p>Variables for determining which direction is allowed.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-scripts.avoidence">
+<span id="avoidence-module"></span><h1>avoidence Module<a class="headerlink" href="#module-scripts.avoidence" title="Permalink to this headline"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.avoidence.cb_avoid">
+<span class="sig-prename descclassname"><span class="pre">scripts.avoidence.</span></span><span class="sig-name descname"><span class="pre">cb_avoid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/avoidence.html#cb_avoid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.avoidence.cb_avoid" title="Permalink to this definition"></a></dt>
+<dd><p>Callback function used to acquire and manage the data from the <cite>/lase_scan</cite> subscription. Once the callback retrieves the <cite>ranges[]</cite> array, the following 3 sub-ranges divide the data structure  as follows:
+* From 0 to 143: which represents the right side of the scanned area.
+* From 288 to 431: which represents the front side of the scanned area.
+* From 576 to 719: which represents the left side of the scanned area.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>msg</strong> – </p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>

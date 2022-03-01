@@ -23,3 +23,23 @@ UI Module
 =====================
 .. automodule:: scripts.UI
 	:members:
+	
+	
+go_to_desired_pos Module 
+=========================
+.. automodule:: scripts.go_to_desired_pos
+	:members:
+	
+
+teleop_avoid Module 
+=====================
+.. automodule:: scripts.teleop_avoid
+	:members:
+	
+
+avoidence Module 
+=====================
+.. automodule:: scripts.avoidence
+	:members:
+	
+

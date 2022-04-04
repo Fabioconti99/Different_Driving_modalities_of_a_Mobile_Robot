@@ -3,7 +3,7 @@
 """
 .. module:: teleop_avoid
  :platform: Unix
- :synopsys: Python node for robot's keyboard-input driving capapilities.
+ :synopsis: Python node for robot's keyboard-input driving capapilities.
 
 .. moduleauthor:: Fabio Conti <s4693053@studenti.unige.it>
 
@@ -227,8 +227,8 @@ def new_dict(dictionary):
     	* 0 = the wall is close to the left of the robot. The user will not be able to turn right.
     
     * `ok_straight`:
-    * 1 = the wall is not close to the front of the robot. The user will be able to drive straight. 
-    * 0 = the wall is close to the front of the robot. The user will not be able to drive straight.
+    	* 1 = the wall is not close to the front of the robot. The user will be able to drive straight. 
+    	* 0 = the wall is close to the front of the robot. The user will not be able to drive straight.
     """
     global ok_left
     global ok_right

@@ -1,23 +1,15 @@
 #!/usr/bin/python3
 
-
-from std_srvs.srv import *
-import math
-import rospy
-
-
-
-
 """
 .. module:: UI
  :platform: Unix
- :synopsys: Python module for user interface
+ :synopsis: Python module for user interface
 
 .. moduleauthor:: Fabio Conti <s4693053@studenti.unige.it>
 
 This is the ROS node which controls the robot's driving capabilities inside the environment. The *UI function* will command the robot to drive with a certain *Modality* inside the Gazebo map. Thanks to this node, the User will interact with the simulation choosing the driving mode through certain keyboard inputs.
 
-H2 -- Driving modalities
+-- Driving modalities
 ========================
 
 Driving modalities related to their keyboard inputs:
@@ -27,18 +19,25 @@ Driving modalities related to their keyboard inputs:
 * The keyboard input *[2]* will start a simple teleop-key interface (:mod:`teleop_avoid`).
 * The keyboard input *[3]* will add to the previous interface an avoidance layer (:mod:`avoidence`).
 
-H2 -- Parameters
+-- Parameters
 ================
 
 Thanks to the ``launch_nodes.launch`` launch file, I added *three parameters* to the project for managing the *different activation state* of all the nodes involved in the project.
 The three parameters are:
 
-* *Active*: This parameter manages the current state of the project's ROS node chain. Once the program is launched, the parameter is set to be in *idle state* (0 states). In the beginning, one of the nodes will be in its active state. The UI node is capable of managing the change of the value of this parameter thanks to the retrieved user input. A simple legend will tell the user what button to press for running a certain driving modality. The user input will change the value of the parameter and all the nodes will either keep their current idle state or switch to a running state. An If-Statement inside every node manages this modality switch.
+*Active*: This parameter manages the current state of the project's ROS node chain. Once the program is launched, the parameter is set to be in *idle state* (0 states). In the beginning, one of the nodes will be in its active state. The UI node is capable of managing the change of the value of this parameter thanks to the retrieved user input. A simple legend will tell the user what button to press for running a certain driving modality. The user input will change the value of the parameter and all the nodes will either keep their current idle state or switch to a running state. An If-Statement inside every node manages this modality switch.
 
-* *Posion X and Position Y*: Also, these two parameters are retrieved by an input user managed in the UI node. Once the user selects the *first modality [1]* the UI interface will also ask for an X and Y coordinate. This data represents the position we want the robot to go. If the user wants to stop the robot's motion, it is sufficient to either input another driving modality or set the project idle state.
+*Posion X and Position Y*: Also, these two parameters are retrieved by an input user managed in the UI node. Once the user selects the *first modality [1]* the UI interface will also ask for an X and Y coordinate. This data represents the position we want the robot to go. If the user wants to stop the robot's motion, it is sufficient to either input another driving modality or set the project idle state.
 The UI node will also keep the user updated on the current modality thanks to the on-screen messages sent at every state switch. Some flags will keep track of the current modality based on the UI inputs.
 
 """
+
+
+from std_srvs.srv import *
+import math
+import rospy
+
+
 
  
 

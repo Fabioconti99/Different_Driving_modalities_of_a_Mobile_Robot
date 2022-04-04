@@ -64,18 +64,10 @@
   <h1>Source code for scripts.avoidence</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 
-<span class="c1"># Imports</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
-
-<span class="kn">from</span> <span class="nn">sensor_msgs.msg</span> <span class="kn">import</span> <span class="n">LaserScan</span>
-<span class="kn">import</span> <span class="nn">rospy</span>
-<span class="kn">from</span> <span class="nn">final_assignment.msg</span> <span class="kn">import</span> <span class="n">Avoid</span> <span class="c1">#custom import</span>
-
-
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">.. module:: avoidence</span>
 <span class="sd"> :platform: Unix</span>
-<span class="sd"> :synopsys: Python node for robot&#39;s avoidence.</span>
+<span class="sd"> :synopsis: Python node for robot&#39;s avoidence.</span>
 
 <span class="sd">.. moduleauthor:: Fabio Conti &lt;s4693053@studenti.unige.it&gt;</span>
 
@@ -89,11 +81,29 @@
 <span class="sd">The node will later elaborate the data acquired to publish it on the ``custom_controller`` custom topic through the ``Avoid.msg`` custom message.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Imports</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">sensor_msgs.msg</span> <span class="kn">import</span> <span class="n">LaserScan</span>
+<span class="kn">import</span> <span class="nn">rospy</span>
+<span class="kn">from</span> <span class="nn">final_assignment.msg</span> <span class="kn">import</span> <span class="n">Avoid</span> <span class="c1">#custom import</span>
+
+
+
 
 
 <span class="n">ok_left</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Local variable for identifing the possible presence of a wall to the left of the robot.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="n">ok_right</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Local variable for identifing the possible presence of a wall to the right of the robot.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="n">ok_straight</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Local variable for identifing the possible presence of a wall to the front of the robot.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="c1"># Call back function needed for checking if any wall is close to the robot and it what direction the wall is.</span>
 <div class="viewcode-block" id="cb_avoid"><a class="viewcode-back" href="../../index.html#scripts.avoidence.cb_avoid">[docs]</a><span class="k">def</span> <span class="nf">cb_avoid</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
@@ -143,7 +153,10 @@
 		<span class="n">ok_left</span> <span class="o">=</span> <span class="mi">1</span></div>
 		
 
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../index.html#scripts.avoidence.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	The main function of this node will always be active during execution. The first section of the function is dedicate to the definition of the subscriber callback and the pubblisher. The three `pub_msg` sections will be equated to the `ok_` local variables and constantly pubblished with a 5 hz rate to the custom topic `custom_controller`.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 
 	<span class="k">global</span> <span class="n">ok_left</span>
 	<span class="k">global</span> <span class="n">ok_right</span>
@@ -165,7 +178,7 @@
 		
 		<span class="n">pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">pub_msg</span><span class="p">)</span>		<span class="c1"># publishing the messages fields</span>
 		
-		<span class="n">rate</span><span class="o">.</span><span class="n">sleep</span><span class="p">()</span>				<span class="c1"># 10hz delay.</span>
+		<span class="n">rate</span><span class="o">.</span><span class="n">sleep</span><span class="p">()</span>				<span class="c1"># 10hz delay.</span></div>
 
 <span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
 	<span class="n">main</span><span class="p">()</span>

@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
 
-# Imports
-from __future__ import print_function
-
-from sensor_msgs.msg import LaserScan
-import rospy
-from final_assignment.msg import Avoid #custom import
-
-
 """
 .. module:: avoidence
  :platform: Unix
- :synopsys: Python node for robot's avoidence.
+ :synopsis: Python node for robot's avoidence.
 
 .. moduleauthor:: Fabio Conti <s4693053@studenti.unige.it>
 
@@ -25,11 +17,29 @@ This node aims to activate a security feature for driving with the teleop_key mo
 The node will later elaborate the data acquired to publish it on the ``custom_controller`` custom topic through the ``Avoid.msg`` custom message.
 
 """
+# Imports
+from __future__ import print_function
+
+from sensor_msgs.msg import LaserScan
+import rospy
+from final_assignment.msg import Avoid #custom import
+
+
+
 
 
 ok_left = 1
+"""
+Local variable for identifing the possible presence of a wall to the left of the robot.
+"""
 ok_right = 1
+"""
+Local variable for identifing the possible presence of a wall to the right of the robot.
+"""
 ok_straight = 1
+"""
+Local variable for identifing the possible presence of a wall to the front of the robot.
+"""
 
 # Call back function needed for checking if any wall is close to the robot and it what direction the wall is.
 def cb_avoid(msg):
@@ -80,6 +90,9 @@ def cb_avoid(msg):
 		
 
 def main():
+	"""
+	The main function of this node will always be active during execution. The first section of the function is dedicate to the definition of the subscriber callback and the pubblisher. The three `pub_msg` sections will be equated to the `ok_` local variables and constantly pubblished with a 5 hz rate to the custom topic `custom_controller`.
+	"""
 
 	global ok_left
 	global ok_right

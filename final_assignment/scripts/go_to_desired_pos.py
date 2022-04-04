@@ -3,7 +3,7 @@
 """
 .. module:: go_to_desired_pos
  :platform: Unix
- :synopsys: Python node for robot's autonomous driving capapilities.
+ :synopsis: Python node for robot's autonomous driving capapilities.
 
 .. moduleauthor:: Fabio Conti <s4693053@studenti.unige.it>
 
@@ -41,15 +41,15 @@ import math
 import rospy
 
 
-active_ = rospy.get_param('active')
+# active_ = rospy.get_param('active')
 """
 Parameter retrived for keeping track of the current driving modality.
 """
-desired_position_x = rospy.get_param('des_pos_x')
+# desired_position_x = rospy.get_param('des_pos_x')
 """
 Parameter retrived for assigning the x coodinate of the goal location.
 """
-desired_position_y = rospy.get_param('des_pos_y')
+# desired_position_y = rospy.get_param('des_pos_y')
 """
 Parameter retrived for assigning the y coodinate of the goal location.
 """
@@ -65,6 +65,7 @@ Global variable for defining the current node state.
 def update_variables(): 
 	"""
 	Function that will costantly update the just mentioned paramiters and assign them to their global variable.
+	
 
 	"""
 	global desired_position_x, desired_position_y, active_
@@ -76,7 +77,7 @@ def update_variables():
 def clbk_odom(msg): 
 	"""
 	CallBack to the odometry topic that will be needed to retrive the current x/y position of the robot in the enviroment.
-
+	The information about the odometry position of the robot is assigned to the global `position_` variable. 
 	Args:
 	 msg
 	"""
@@ -87,7 +88,8 @@ def clbk_odom(msg):
 
 def done_cb(status,result):
 	"""
-	CallBack function for retriveing information about the status of the robot once the goal position is reached.
+	CallBack function for retriving information about the status of the robot once the goal position is reached.
+	Once the holonomic robot will reach the goal, the flag_goal variable will change value to 1. This change will set the modality in the **idle state**.
 
 	Args:
 	 status
@@ -103,6 +105,7 @@ def done_cb(status,result):
 def action_client_set_goal():
 	"""
 	Function for setting a new goal through the use of the action client.
+	The `send_goal` function will activate the reaching of the robot's target keeping track of the action throgh the callback *done_cb*. 
 	"""
 
 	goal.target_pose.pose.position.x = desired_position_x
@@ -114,6 +117,8 @@ def action_client_set_goal():
 def action_client_init():
 	"""
 	Function for the initialization of the action client and the goal message that will be sent to the action server through the clinet.
+	The goal message is of the type ``MoveBaseGoal``. This type of message will contaoin allthe information about  the way the robot will reach the set target. 
+	In this function only some general goal info are set.
 	"""
 
 	global client 
@@ -130,6 +135,8 @@ def action_client_init():
 def my_callback_timeout(event):
 	"""
 	CallBack function used for setting up a timeout to the robot's current task.
+	This function will be activated only if the robot doesn't reach the the desired position target within a 1min time span.
+	The global parameter `active` will be set again to 0 resetting the status of the whole controller structure.
 
 	Args:
 	 event
@@ -144,6 +151,7 @@ def my_callback_timeout(event):
 def main():
 	"""
 	Function for managing the state of the robot. 
+	After the initialization of the node and the assigning of the subscriber callback the the main while loop will start spinning. through out this loop the node will call the previously mentioned functions according to the current state set by the user through the global parameters. Also some messages will be printed to the shell during execution.
 
 	"""
 	

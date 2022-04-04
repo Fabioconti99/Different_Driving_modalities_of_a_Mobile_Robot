@@ -39,8 +39,12 @@
               <div class="local-toc"><ul>
 <li><a class="reference internal" href="#">Welcome to final_assignment’s documentation!</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
-<li><a class="reference internal" href="#module-scripts.UI">UI Module</a></li>
-<li><a class="reference internal" href="#go-to-desired-pos-module">go_to_desired_pos Module</a></li>
+<li><a class="reference internal" href="#module-scripts.UI">UI Module</a><ul>
+<li><a class="reference internal" href="#driving-modalities">– Driving modalities</a></li>
+<li><a class="reference internal" href="#parameters">– Parameters</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-scripts.go_to_desired_pos">go_to_desired_pos Module</a></li>
 <li><a class="reference internal" href="#module-scripts.teleop_avoid">teleop_avoid Module</a></li>
 <li><a class="reference internal" href="#module-scripts.avoidence">avoidence Module</a></li>
 </ul>
@@ -84,6 +88,24 @@
 </div>
 <div class="section" id="module-scripts.UI">
 <span id="ui-module"></span><h1>UI Module<a class="headerlink" href="#module-scripts.UI" title="Permalink to this headline"></a></h1>
+<span class="target" id="module-UI"></span><p>This is the ROS node which controls the robot’s driving capabilities inside the environment. The <em>UI function</em> will command the robot to drive with a certain <em>Modality</em> inside the Gazebo map. Thanks to this node, the User will interact with the simulation choosing the driving mode through certain keyboard inputs.</p>
+<div class="section" id="driving-modalities">
+<h2>– Driving modalities<a class="headerlink" href="#driving-modalities" title="Permalink to this headline"></a></h2>
+<p>Driving modalities related to their keyboard inputs:</p>
+<ul class="simple">
+<li><p>The keyboard input <em>[0]</em> resets the current driving modality (idle state).</p></li>
+<li><p>The keyboard input <em>[1]</em> will start the autonomous drive towards a certain location in the map chosen by the user (<a class="reference internal" href="#module-go_to_desired_pos" title="go_to_desired_pos: Python node for robot's autonomous driving capapilities. (Unix)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">go_to_desired_pos</span></code></a>).</p></li>
+<li><p>The keyboard input <em>[2]</em> will start a simple teleop-key interface (<a class="reference internal" href="#module-teleop_avoid" title="teleop_avoid: Python node for robot's keyboard-input driving capapilities. (Unix)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">teleop_avoid</span></code></a>).</p></li>
+<li><p>The keyboard input <em>[3]</em> will add to the previous interface an avoidance layer (<a class="reference internal" href="#module-avoidence" title="avoidence: Python node for robot's avoidence. (Unix)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">avoidence</span></code></a>).</p></li>
+</ul>
+</div>
+<div class="section" id="parameters">
+<h2>– Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline"></a></h2>
+<p>Thanks to the <code class="docutils literal notranslate"><span class="pre">launch_nodes.launch</span></code> launch file, I added <em>three parameters</em> to the project for managing the <em>different activation state</em> of all the nodes involved in the project.
+The three parameters are:</p>
+<p><em>Active</em>: This parameter manages the current state of the project’s ROS node chain. Once the program is launched, the parameter is set to be in <em>idle state</em> (0 states). In the beginning, one of the nodes will be in its active state. The UI node is capable of managing the change of the value of this parameter thanks to the retrieved user input. A simple legend will tell the user what button to press for running a certain driving modality. The user input will change the value of the parameter and all the nodes will either keep their current idle state or switch to a running state. An If-Statement inside every node manages this modality switch.</p>
+<p><em>Posion X and Position Y</em>: Also, these two parameters are retrieved by an input user managed in the UI node. Once the user selects the <em>first modality [1]</em> the UI interface will also ask for an X and Y coordinate. This data represents the position we want the robot to go. If the user wants to stop the robot’s motion, it is sufficient to either input another driving modality or set the project idle state.
+The UI node will also keep the user updated on the current modality thanks to the on-screen messages sent at every state switch. Some flags will keep track of the current modality based on the UI inputs.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="scripts.UI.main">
 <span class="sig-prename descclassname"><span class="pre">scripts.UI.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/UI.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.UI.main" title="Permalink to this definition"></a></dt>
@@ -97,12 +119,99 @@
 </dd></dl>
 
 </div>
-<div class="section" id="go-to-desired-pos-module">
-<h1>go_to_desired_pos Module<a class="headerlink" href="#go-to-desired-pos-module" title="Permalink to this headline"></a></h1>
+</div>
+<div class="section" id="module-scripts.go_to_desired_pos">
+<span id="go-to-desired-pos-module"></span><h1>go_to_desired_pos Module<a class="headerlink" href="#module-scripts.go_to_desired_pos" title="Permalink to this headline"></a></h1>
+<span class="target" id="module-go_to_desired_pos"></span><dl class="simple">
+<dt>Subscribes to:</dt><dd><p>/nav_msgs/odometry topic where the simulator publishes the robot position.</p>
+</dd>
+<dt>Action:</dt><dd><p>MoveBaseAction
+MoveBaseGoal</p>
+</dd>
+</dl>
+<p>This node implements the autonomous driving capability. The script exploits an <em>action client</em> (<em>actionlib</em> library) instance to establish direct communication with the mobile robot and set and cancel location goals.</p>
+<p>The Action Client-Service communicate via a “ROS Action Protocol”, which is built on top of ROS messages. The client and server then provide a simple API for users to request goals (on the client side) or to execute goals (on the server side) via function calls and callbacks.
+Through out the coding of this node I implemented only the <em>Actionclient</em> side of the whole structure using the already existing server of the following action messages:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MoveBaseAction</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MoveBaseGoal</span></code></p></li>
+</ul>
+<p>For the client and server to communicate, I should define a few messages on which they communicate. This defines the Goal, Feedback, and Result messages with which clients and servers communicate. throughout the coding, I only used the Goal message because that was the one message needed for fulfilling the project aim.</p>
+<p>Thanks to the Actionlib feature, an ActionServer receives the goal message from an ActionClient. In the case of my project, the goal is to move the robot’s base position. The goal would be a MoveBaseGoal message that contains information about where the robot should move to in the world. For controlling all the robot positions in space, the goal would contain the <em>target_pose</em> parameters (stamp, orientation, target position, etc).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.go_to_desired_pos.action_client_init">
+<span class="sig-prename descclassname"><span class="pre">scripts.go_to_desired_pos.</span></span><span class="sig-name descname"><span class="pre">action_client_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/go_to_desired_pos.html#action_client_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.go_to_desired_pos.action_client_init" title="Permalink to this definition"></a></dt>
+<dd><p>Function for the initialization of the action client and the goal message that will be sent to the action server through the clinet.
+The goal message is of the type <code class="docutils literal notranslate"><span class="pre">MoveBaseGoal</span></code>. This type of message will contaoin allthe information about  the way the robot will reach the set target.
+In this function only some general goal info are set.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.go_to_desired_pos.action_client_set_goal">
+<span class="sig-prename descclassname"><span class="pre">scripts.go_to_desired_pos.</span></span><span class="sig-name descname"><span class="pre">action_client_set_goal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/go_to_desired_pos.html#action_client_set_goal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.go_to_desired_pos.action_client_set_goal" title="Permalink to this definition"></a></dt>
+<dd><p>Function for setting a new goal through the use of the action client.
+The <cite>send_goal</cite> function will activate the reaching of the robot’s target keeping track of the action throgh the callback <em>done_cb</em>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.go_to_desired_pos.clbk_odom">
+<span class="sig-prename descclassname"><span class="pre">scripts.go_to_desired_pos.</span></span><span class="sig-name descname"><span class="pre">clbk_odom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/go_to_desired_pos.html#clbk_odom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.go_to_desired_pos.clbk_odom" title="Permalink to this definition"></a></dt>
+<dd><p>CallBack to the odometry topic that will be needed to retrive the current x/y position of the robot in the enviroment.
+The information about the odometry position of the robot is assigned to the global <cite>position_</cite> variable.
+:param msg:</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.go_to_desired_pos.done_cb">
+<span class="sig-prename descclassname"><span class="pre">scripts.go_to_desired_pos.</span></span><span class="sig-name descname"><span class="pre">done_cb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">status</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/go_to_desired_pos.html#done_cb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.go_to_desired_pos.done_cb" title="Permalink to this definition"></a></dt>
+<dd><p>CallBack function for retriving information about the status of the robot once the goal position is reached.
+Once the holonomic robot will reach the goal, the flag_goal variable will change value to 1. This change will set the modality in the <strong>idle state</strong>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>status</strong> – </p></li>
+<li><p><strong>result</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.go_to_desired_pos.flag_goal">
+<span class="sig-prename descclassname"><span class="pre">scripts.go_to_desired_pos.</span></span><span class="sig-name descname"><span class="pre">flag_goal</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#scripts.go_to_desired_pos.flag_goal" title="Permalink to this definition"></a></dt>
+<dd><p>Global variable for defining the current node state.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.go_to_desired_pos.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.go_to_desired_pos.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/go_to_desired_pos.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.go_to_desired_pos.main" title="Permalink to this definition"></a></dt>
+<dd><p>Function for managing the state of the robot.
+After the initialization of the node and the assigning of the subscriber callback the the main while loop will start spinning. through out this loop the node will call the previously mentioned functions according to the current state set by the user through the global parameters. Also some messages will be printed to the shell during execution.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.go_to_desired_pos.my_callback_timeout">
+<span class="sig-prename descclassname"><span class="pre">scripts.go_to_desired_pos.</span></span><span class="sig-name descname"><span class="pre">my_callback_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/go_to_desired_pos.html#my_callback_timeout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.go_to_desired_pos.my_callback_timeout" title="Permalink to this definition"></a></dt>
+<dd><p>CallBack function used for setting up a timeout to the robot’s current task.
+This function will be activated only if the robot doesn’t reach the the desired position target within a 1min time span.
+The global parameter <cite>active</cite> will be set again to 0 resetting the status of the whole controller structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>event</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.go_to_desired_pos.update_variables">
+<span class="sig-prename descclassname"><span class="pre">scripts.go_to_desired_pos.</span></span><span class="sig-name descname"><span class="pre">update_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/go_to_desired_pos.html#update_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.go_to_desired_pos.update_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Function that will costantly update the just mentioned paramiters and assign them to their global variable.</p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-scripts.teleop_avoid">
 <span id="teleop-avoid-module"></span><h1>teleop_avoid Module<a class="headerlink" href="#module-scripts.teleop_avoid" title="Permalink to this headline"></a></h1>
-<dl class="simple">
+<span class="target" id="module-teleop_avoid"></span><dl class="simple">
 <dt>Publishes to:</dt><dd><p>/cmd_vel</p>
 </dd>
 </dl>
@@ -167,9 +276,14 @@ from the args and kwargs arguments, respectively.</p>
 </dd>
 </dl>
 </li>
-<li><p><cite>ok_straight</cite>:</p></li>
+<li><dl class="simple">
+<dt><cite>ok_straight</cite>:</dt><dd><ul>
 <li><p>1 = the wall is not close to the front of the robot. The user will be able to drive straight.</p></li>
 <li><p>0 = the wall is close to the front of the robot. The user will not be able to drive straight.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
 </ul>
 </dd></dl>
 
@@ -194,6 +308,14 @@ from the args and kwargs arguments, respectively.</p>
 </div>
 <div class="section" id="module-scripts.avoidence">
 <span id="avoidence-module"></span><h1>avoidence Module<a class="headerlink" href="#module-scripts.avoidence" title="Permalink to this headline"></a></h1>
+<span class="target" id="module-avoidence"></span><dl class="simple">
+<dt>Subscribes to:</dt><dd><p>/laser_scan</p>
+</dd>
+<dt>Publishes to:</dt><dd><p>/avoid</p>
+</dd>
+</dl>
+<p>This node aims to activate a security feature for driving with the teleop_key modality. Thanks to the <em>subscription</em> to the <code class="docutils literal notranslate"><span class="pre">/laser_scan</span></code> topic, the node will be able to get info about the robot’s surroundings. The subscription to the topic will give back the <code class="docutils literal notranslate"><span class="pre">ranges[0,720]</span></code> array to the subscribed callback. This data structure contains the distance values between the robot and the surrounding walls for a span of 180º degrees in front of the robot. The array simulates the info that a set of lasers would retrieve in an actual environment.
+The node will later elaborate the data acquired to publish it on the <code class="docutils literal notranslate"><span class="pre">custom_controller</span></code> custom topic through the <code class="docutils literal notranslate"><span class="pre">Avoid.msg</span></code> custom message.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="scripts.avoidence.cb_avoid">
 <span class="sig-prename descclassname"><span class="pre">scripts.avoidence.</span></span><span class="sig-name descname"><span class="pre">cb_avoid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/avoidence.html#cb_avoid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.avoidence.cb_avoid" title="Permalink to this definition"></a></dt>
@@ -206,6 +328,30 @@ from the args and kwargs arguments, respectively.</p>
 <dd class="field-odd"><p><strong>msg</strong> – </p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.avoidence.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.avoidence.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripts/avoidence.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.avoidence.main" title="Permalink to this definition"></a></dt>
+<dd><p>The main function of this node will always be active during execution. The first section of the function is dedicate to the definition of the subscriber callback and the pubblisher. The three <cite>pub_msg</cite> sections will be equated to the <cite>ok_</cite> local variables and constantly pubblished with a 5 hz rate to the custom topic <cite>custom_controller</cite>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.avoidence.ok_left">
+<span class="sig-prename descclassname"><span class="pre">scripts.avoidence.</span></span><span class="sig-name descname"><span class="pre">ok_left</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#scripts.avoidence.ok_left" title="Permalink to this definition"></a></dt>
+<dd><p>Local variable for identifing the possible presence of a wall to the left of the robot.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.avoidence.ok_right">
+<span class="sig-prename descclassname"><span class="pre">scripts.avoidence.</span></span><span class="sig-name descname"><span class="pre">ok_right</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#scripts.avoidence.ok_right" title="Permalink to this definition"></a></dt>
+<dd><p>Local variable for identifing the possible presence of a wall to the right of the robot.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.avoidence.ok_straight">
+<span class="sig-prename descclassname"><span class="pre">scripts.avoidence.</span></span><span class="sig-name descname"><span class="pre">ok_straight</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#scripts.avoidence.ok_straight" title="Permalink to this definition"></a></dt>
+<dd><p>Local variable for identifing the possible presence of a wall to the front of the robot.</p>
 </dd></dl>
 
 </div>

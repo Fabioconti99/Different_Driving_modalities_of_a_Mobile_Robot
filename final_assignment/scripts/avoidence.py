@@ -50,7 +50,9 @@ def cb_avoid(msg):
 	* From 576 to 719: which represents the left side of the scanned area.
 	
 	Args:
-	 msg
+	 msg (sensor_messages/LaserScan.msg): contains `ranges` array which provides the distances of each laser with respect to the objects in the enviroment.
+	 
+	No Returns
 	"""
 
 	global ok_left
@@ -92,6 +94,8 @@ def cb_avoid(msg):
 def main():
 	"""
 	The main function of this node will always be active during execution. The first section of the function is dedicate to the definition of the subscriber callback and the pubblisher. The three `pub_msg` sections will be equated to the `ok_` local variables and constantly pubblished with a 5 hz rate to the custom topic `custom_controller`.
+	
+	No Returns
 	"""
 
 	global ok_left

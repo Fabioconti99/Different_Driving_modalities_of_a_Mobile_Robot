@@ -74,7 +74,8 @@ def main():
 	* *2*: This driving option implements a simple teleop_key type of interface that will let the user drive the robot through the pressing of certain keyboard keys.  
 
 	* *3*: The last modality adds an avoidence capability to the previous one. This added feature will prevent the user to drive the robot into a wall.
-
+	
+	No Returns
 	"""
 	
 	flag = 0	# Flag used to print a cancel goal message whenever a button is pressed while the first modality is rolling.

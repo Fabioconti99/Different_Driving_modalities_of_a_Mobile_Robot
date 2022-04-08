@@ -41,19 +41,6 @@ import math
 import rospy
 
 
-# active_ = rospy.get_param('active')
-"""
-Parameter retrived for keeping track of the current driving modality.
-"""
-# desired_position_x = rospy.get_param('des_pos_x')
-"""
-Parameter retrived for assigning the x coodinate of the goal location.
-"""
-# desired_position_y = rospy.get_param('des_pos_y')
-"""
-Parameter retrived for assigning the y coodinate of the goal location.
-"""
-
 st="                                                                  "
 
 flag_goal = 0
@@ -66,7 +53,9 @@ def update_variables():
 	"""
 	Function that will costantly update the just mentioned paramiters and assign them to their global variable.
 	
-
+	No Args 
+	
+	No Returns
 	"""
 	global desired_position_x, desired_position_y, active_
 	active_ = rospy.get_param('active')
@@ -79,7 +68,9 @@ def clbk_odom(msg):
 	CallBack to the odometry topic that will be needed to retrive the current x/y position of the robot in the enviroment.
 	The information about the odometry position of the robot is assigned to the global `position_` variable. 
 	Args:
-	 msg
+	 msg (/odom.msg): this variable will contain the current x/y position of the robot in the enviroment.
+	 
+	 No Returns
 	"""
 
 	global position_
@@ -92,8 +83,10 @@ def done_cb(status,result):
 	Once the holonomic robot will reach the goal, the flag_goal variable will change value to 1. This change will set the modality in the **idle state**.
 
 	Args:
-	 status
-	 result
+	 status (actionlib_goalStatus): integer code corrisponding to the terminal state.
+	 result (MoveBaseResult): result of the goal processing.
+	 
+	No Returns
 	"""
 	global flag_goal
 	
@@ -106,6 +99,10 @@ def action_client_set_goal():
 	"""
 	Function for setting a new goal through the use of the action client.
 	The `send_goal` function will activate the reaching of the robot's target keeping track of the action throgh the callback *done_cb*. 
+	
+	No Args 
+	
+	No returns
 	"""
 
 	goal.target_pose.pose.position.x = desired_position_x
@@ -119,6 +116,10 @@ def action_client_init():
 	Function for the initialization of the action client and the goal message that will be sent to the action server through the clinet.
 	The goal message is of the type ``MoveBaseGoal``. This type of message will contaoin allthe information about  the way the robot will reach the set target. 
 	In this function only some general goal info are set.
+	
+	No Args
+	
+	No returns
 	"""
 
 	global client 
@@ -139,7 +140,9 @@ def my_callback_timeout(event):
 	The global parameter `active` will be set again to 0 resetting the status of the whole controller structure.
 
 	Args:
-	 event
+	 event (float) : time variable. 
+	
+	No Returns
 	"""
 
 	if active_==1:
@@ -152,7 +155,21 @@ def main():
 	"""
 	Function for managing the state of the robot. 
 	After the initialization of the node and the assigning of the subscriber callback the the main while loop will start spinning. through out this loop the node will call the previously mentioned functions according to the current state set by the user through the global parameters. Also some messages will be printed to the shell during execution.
-
+	
+	No returns
+	"""
+	
+	active_ = rospy.get_param('active')
+	"""
+	Parameter retrived for keeping track of the current driving modality.
+	"""
+	desired_position_x = rospy.get_param('des_pos_x')
+	"""
+	Parameter retrived for assigning the x coodinate of the goal location.
+	"""
+	desired_position_y = rospy.get_param('des_pos_y')
+	"""
+	Parameter retrived for assigning the y coodinate of the goal location.
 	"""
 	
 	global flag_goal

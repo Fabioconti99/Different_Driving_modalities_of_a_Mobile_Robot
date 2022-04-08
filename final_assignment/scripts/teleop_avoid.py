@@ -144,6 +144,8 @@ class PublishThread(threading.Thread):
         I added this new function named ``stop_motion`` to the ``PublishThread`` class. This function will make the robot stop once the driving modality gets switched. The function will set the linear and angular velocity to 0 with the ``twist`` message through the ``/cmd_vel`` topic.
         Args:
          self
+        
+        No returns 
         """
         twist = Twist()
         # Publish stop message when thread exits.
@@ -201,7 +203,9 @@ def cb_avoidence(msg):
 	"""
 	The node *subscribes* to the custom topic ``custom_controller`` implemented for publishing the `Avoid. msg` message containing info about the walls surrounding the robot. The callback subscribed sets some local variables equal to the published fields of the custom message. The following uses these variables function to change some keyboards inputs to prevent the user to drive the robot into walls.
 	Args:
-	 msg
+	 msg (/custom_Controller): custom message built to retrive informtion about the position of the walls surrounding the robot.
+	 
+	 No Returns
 	"""
 	global ok_left
 	global ok_right
@@ -229,6 +233,11 @@ def new_dict(dictionary):
     * `ok_straight`:
     	* 1 = the wall is not close to the front of the robot. The user will be able to drive straight. 
     	* 0 = the wall is close to the front of the robot. The user will not be able to drive straight.
+    	
+    Args
+     dictionary (dict): dictionary used to pop elements related to the avoidance feature.
+     
+    No Returns
     """
     global ok_left
     global ok_right

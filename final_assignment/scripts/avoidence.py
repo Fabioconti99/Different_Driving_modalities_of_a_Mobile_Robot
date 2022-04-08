@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 .. module:: avoidence
  :platform: Unix
@@ -25,9 +24,6 @@ import rospy
 from final_assignment.msg import Avoid #custom import
 
 
-
-
-
 ok_left = 1
 """
 Local variable for identifing the possible presence of a wall to the left of the robot.
@@ -40,6 +36,7 @@ ok_straight = 1
 """
 Local variable for identifing the possible presence of a wall to the front of the robot.
 """
+
 
 # Call back function needed for checking if any wall is close to the robot and it what direction the wall is.
 def cb_avoid(msg):
@@ -122,24 +119,6 @@ def main():
 
 if __name__=="__main__":
 	main()
-		
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-
-
-
+	
+	
+	

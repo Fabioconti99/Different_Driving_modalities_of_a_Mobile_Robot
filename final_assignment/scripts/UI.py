@@ -1,20 +1,45 @@
 #!/usr/bin/python3
-import rospy
+
+"""
+.. module:: UI
+ :platform: Unix
+ :synopsis: Python module for user interface
+
+.. moduleauthor:: Fabio Conti <s4693053@studenti.unige.it>
+
+This is the ROS node which controls the robot's driving capabilities inside the environment. The *UI function* will command the robot to drive with a certain *Modality* inside the Gazebo map. Thanks to this node, the User will interact with the simulation choosing the driving mode through certain keyboard inputs.
+
+-- Driving modalities
+========================
+
+Driving modalities related to their keyboard inputs:
+
+* The keyboard input *[0]* resets the current driving modality (idle state).
+* The keyboard input *[1]* will start the autonomous drive towards a certain location in the map chosen by the user (:mod:`go_to_desired_pos`).
+* The keyboard input *[2]* will start a simple teleop-key interface (:mod:`teleop_avoid`).
+* The keyboard input *[3]* will add to the previous interface an avoidance layer (:mod:`avoidence`).
+
+-- Parameters
+================
+
+Thanks to the ``launch_nodes.launch`` launch file, I added *three parameters* to the project for managing the *different activation state* of all the nodes involved in the project.
+The three parameters are:
+
+*Active*: This parameter manages the current state of the project's ROS node chain. Once the program is launched, the parameter is set to be in *idle state* (0 states). In the beginning, one of the nodes will be in its active state. The UI node is capable of managing the change of the value of this parameter thanks to the retrieved user input. A simple legend will tell the user what button to press for running a certain driving modality. The user input will change the value of the parameter and all the nodes will either keep their current idle state or switch to a running state. An If-Statement inside every node manages this modality switch.
+
+*Posion X and Position Y*: Also, these two parameters are retrieved by an input user managed in the UI node. Once the user selects the *first modality [1]* the UI interface will also ask for an X and Y coordinate. This data represents the position we want the robot to go. If the user wants to stop the robot's motion, it is sufficient to either input another driving modality or set the project idle state.
+The UI node will also keep the user updated on the current modality thanks to the on-screen messages sent at every state switch. Some flags will keep track of the current modality based on the UI inputs.
+
+"""
+
+
 from std_srvs.srv import *
 import math
-'''
-UI function:
-this function will constantly ask the user to choose the current driving modality for the movements of the robot.
-The following numbers rappresent the input the user has to insert in the UI to access a certain driving modality:
+import rospy
 
-0: The robot will enter an IDLE STATE. In this modality no user input will be acceptet by the robot. The robot will not move until the modality will change.
 
-1: This modality will activate an action that will drive automaticlly the robot toward a desired position. If the robot will not find the way to that certain coordinate position within 30 seconds from the beginning if the task, the driving will stop.
 
-2: This driving option implements a simple teleop_key type of interface that will let the user drive the robot through the pressing of certain keyboard keys.  
-
-3: The last modality adds an avoidence capability to the previous one. This added feature will prevent the user to drive the robot into a wall.
-''' 
+ 
 
 msg = """
 \033[1;37;40m
@@ -36,9 +61,22 @@ e/c : increase/decrease only angular speed by 10%
 CTRL-C to quit
 \033[0;37;40m
 
-""" 
+"""
 
 def main():
+	"""
+	The main function will constantly ask the user to choose the current driving modality for the movements of the robot. The following numbers rappresent the input the user has to insert in the UI to access a certain driving modality:
+
+	* *0*: The robot will enter an IDLE STATE. In this modality no user input will be acceptet by the robot. The robot will not move until the modality will change.
+
+	* *1*: This modality will activate an action that will drive automaticlly the robot toward a desired position. If the robot will not find the way to that certain coordinate position within 30 seconds from the beginning if the task, the driving will stop.
+
+	* *2*: This driving option implements a simple teleop_key type of interface that will let the user drive the robot through the pressing of certain keyboard keys.  
+
+	* *3*: The last modality adds an avoidence capability to the previous one. This added feature will prevent the user to drive the robot into a wall.
+	
+	No Returns
+	"""
 	
 	flag = 0	# Flag used to print a cancel goal message whenever a button is pressed while the first modality is rolling.
 	while not rospy.is_shutdown(): 

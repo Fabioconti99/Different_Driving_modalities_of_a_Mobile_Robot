@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
+"""
+.. module:: avoidence
+ :platform: Unix
+ :synopsis: Python node for robot's avoidence.
 
+.. moduleauthor:: Fabio Conti <s4693053@studenti.unige.it>
+
+Subscribes to:
+ /laser_scan
+ 
+Publishes to:
+ /avoid
+ 
+This node aims to activate a security feature for driving with the teleop_key modality. Thanks to the *subscription* to the ``/laser_scan`` topic, the node will be able to get info about the robot's surroundings. The subscription to the topic will give back the ``ranges[0,720]`` array to the subscribed callback. This data structure contains the distance values between the robot and the surrounding walls for a span of 180º degrees in front of the robot. The array simulates the info that a set of lasers would retrieve in an actual environment.
+The node will later elaborate the data acquired to publish it on the ``custom_controller`` custom topic through the ``Avoid.msg`` custom message.
+
+"""
 # Imports
 from __future__ import print_function
 
@@ -9,11 +25,32 @@ from final_assignment.msg import Avoid #custom import
 
 
 ok_left = 1
+"""
+Local variable for identifing the possible presence of a wall to the left of the robot.
+"""
 ok_right = 1
+"""
+Local variable for identifing the possible presence of a wall to the right of the robot.
+"""
 ok_straight = 1
+"""
+Local variable for identifing the possible presence of a wall to the front of the robot.
+"""
+
 
 # Call back function needed for checking if any wall is close to the robot and it what direction the wall is.
 def cb_avoid(msg):
+	"""
+	Callback function used to acquire and manage the data from the `/lase_scan` subscription. Once the callback retrieves the `ranges[]` array, the following 3 sub-ranges divide the data structure  as follows:
+	* From 0 to 143: which represents the right side of the scanned area.
+	* From 288 to 431: which represents the front side of the scanned area.
+	* From 576 to 719: which represents the left side of the scanned area.
+	
+	Args:
+	 msg (sensor_messages/LaserScan.msg): contains `ranges` array which provides the distances of each laser with respect to the objects in the enviroment.
+	 
+	No Returns
+	"""
 
 	global ok_left
 	global ok_right
@@ -52,6 +89,11 @@ def cb_avoid(msg):
 		
 
 def main():
+	"""
+	The main function of this node will always be active during execution. The first section of the function is dedicate to the definition of the subscriber callback and the pubblisher. The three `pub_msg` sections will be equated to the `ok_` local variables and constantly pubblished with a 5 hz rate to the custom topic `custom_controller`.
+	
+	No Returns
+	"""
 
 	global ok_left
 	global ok_right
@@ -77,24 +119,6 @@ def main():
 
 if __name__=="__main__":
 	main()
-		
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-
-
-
+	
+	
+	

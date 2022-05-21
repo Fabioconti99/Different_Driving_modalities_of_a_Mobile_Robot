@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>scripts.UI &mdash; final_assignment 1.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> final_assignment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">final_assignment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>scripts.UI</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for scripts.UI</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python3</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: UI</span>
+<span class="sd"> :platform: Unix</span>
+<span class="sd"> :synopsis: Python module for user interface</span>
+
+<span class="sd">.. moduleauthor:: Fabio Conti &lt;s4693053@studenti.unige.it&gt;</span>
+
+<span class="sd">This is the ROS node which controls the robot&#39;s driving capabilities inside the environment. The *UI function* will command the robot to drive with a certain *Modality* inside the Gazebo map. Thanks to this node, the User will interact with the simulation choosing the driving mode through certain keyboard inputs.</span>
+
+<span class="sd">-- Driving modalities</span>
+<span class="sd">========================</span>
+
+<span class="sd">Driving modalities related to their keyboard inputs:</span>
+
+<span class="sd">* The keyboard input *[0]* resets the current driving modality (idle state).</span>
+<span class="sd">* The keyboard input *[1]* will start the autonomous drive towards a certain location in the map chosen by the user (:mod:`go_to_desired_pos`).</span>
+<span class="sd">* The keyboard input *[2]* will start a simple teleop-key interface (:mod:`teleop_avoid`).</span>
+<span class="sd">* The keyboard input *[3]* will add to the previous interface an avoidance layer (:mod:`avoidence`).</span>
+
+<span class="sd">-- Parameters</span>
+<span class="sd">================</span>
+
+<span class="sd">Thanks to the ``launch_nodes.launch`` launch file, I added *three parameters* to the project for managing the *different activation state* of all the nodes involved in the project.</span>
+<span class="sd">The three parameters are:</span>
+
+<span class="sd">*Active*: This parameter manages the current state of the project&#39;s ROS node chain. Once the program is launched, the parameter is set to be in *idle state* (0 states). In the beginning, one of the nodes will be in its active state. The UI node is capable of managing the change of the value of this parameter thanks to the retrieved user input. A simple legend will tell the user what button to press for running a certain driving modality. The user input will change the value of the parameter and all the nodes will either keep their current idle state or switch to a running state. An If-Statement inside every node manages this modality switch.</span>
+
+<span class="sd">*Posion X and Position Y*: Also, these two parameters are retrieved by an input user managed in the UI node. Once the user selects the *first modality [1]* the UI interface will also ask for an X and Y coordinate. This data represents the position we want the robot to go. If the user wants to stop the robot&#39;s motion, it is sufficient to either input another driving modality or set the project idle state.</span>
+<span class="sd">The UI node will also keep the user updated on the current modality thanks to the on-screen messages sent at every state switch. Some flags will keep track of the current modality based on the UI inputs.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">std_srvs.srv</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">rospy</span>
+
+
+
+ 
+
+<span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="se">\033</span><span class="s2">[1;37;40m</span>
+<span class="s2">Reading from the keyboard  and managing into the UI node!</span>
+<span class="s2">---------------------------</span>
+<span class="s2">Driving modalities:</span>
+
+<span class="s2">-[0]: idle state.</span>
+<span class="s2">-[1]: Autonomous drive towards a desired position.</span>
+<span class="s2">-[2]: Teleop keyboard interface.</span>
+<span class="s2">-[3]: Avoidence feature for modality 2.</span>
+
+<span class="s2">anything else : stop</span>
+
+<span class="s2">q/z : increase/decrease max speeds by 10%</span>
+<span class="s2">w/x : increase/decrease only linear speed by 10%</span>
+<span class="s2">e/c : increase/decrease only angular speed by 10%</span>
+
+<span class="s2">CTRL-C to quit</span>
+<span class="se">\033</span><span class="s2">[0;37;40m</span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../index.html#scripts.UI.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	The main function will constantly ask the user to choose the current driving modality for the movements of the robot. The following numbers rappresent the input the user has to insert in the UI to access a certain driving modality:</span>
+
+<span class="sd">	* *0*: The robot will enter an IDLE STATE. In this modality no user input will be acceptet by the robot. The robot will not move until the modality will change.</span>
+
+<span class="sd">	* *1*: This modality will activate an action that will drive automaticlly the robot toward a desired position. If the robot will not find the way to that certain coordinate position within 30 seconds from the beginning if the task, the driving will stop.</span>
+
+<span class="sd">	* *2*: This driving option implements a simple teleop_key type of interface that will let the user drive the robot through the pressing of certain keyboard keys.  </span>
+
+<span class="sd">	* *3*: The last modality adds an avoidence capability to the previous one. This added feature will prevent the user to drive the robot into a wall.</span>
+<span class="sd">	</span>
+<span class="sd">	No Returns</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	
+	<span class="n">flag</span> <span class="o">=</span> <span class="mi">0</span>	<span class="c1"># Flag used to print a cancel goal message whenever a button is pressed while the first modality is rolling.</span>
+	<span class="k">while</span> <span class="ow">not</span> <span class="n">rospy</span><span class="o">.</span><span class="n">is_shutdown</span><span class="p">():</span> 
+		<span class="n">command</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\033</span><span class="s1">[0;37;40m Choose modality: </span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">))</span>	<span class="c1"># User input retrivial.</span>
+			
+		<span class="c1"># IDLE MODALITY</span>
+		<span class="k">if</span> <span class="n">command</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+			
+			<span class="c1"># First modality calcel message.</span>
+			<span class="k">if</span> <span class="n">flag</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Canceling goal&quot;</span><span class="p">)</span>
+				<span class="n">flag</span><span class="o">=</span><span class="mi">0</span>
+				
+			<span class="n">rospy</span><span class="o">.</span><span class="n">set_param</span><span class="p">(</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>			<span class="c1"># Setting the parameter to 0.</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;35;40m Idle </span><span class="se">\033</span><span class="s2">[1;31;40m&quot;</span><span class="p">)</span>	<span class="c1"># Printing the actual state.</span>
+				
+		<span class="c1"># AUTONOMOUS DRIVE</span>
+		<span class="k">elif</span> <span class="n">command</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+		
+			<span class="c1"># First modality calcel message</span>
+			<span class="k">if</span> <span class="n">flag</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Canceling goal&quot;</span><span class="p">)</span>
+				<span class="n">flag</span><span class="o">=</span><span class="mi">0</span>
+				
+			<span class="n">rospy</span><span class="o">.</span><span class="n">set_param</span><span class="p">(</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>		<span class="c1"># Reset of the modality</span>
+			
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;32;40m Modality 1 is active, press &#39;0&#39; to cancel the target.&quot;</span><span class="p">)</span>	<span class="c1"># Print infos.</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[0;37;40m Where do you want the robot to go?&quot;</span><span class="p">)</span>
+			<span class="n">des_x_input</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;37;40m Insert x coordinate: &quot;</span><span class="p">))</span>			<span class="c1"># User Input for the x coordinate to reach.</span>
+			<span class="n">des_y_input</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;37;40m Insert y coordinate: &quot;</span><span class="p">))</span>			<span class="c1"># First modality calcel message.</span>
+			
+			<span class="n">rospy</span><span class="o">.</span><span class="n">set_param</span><span class="p">(</span><span class="s1">&#39;des_pos_x&#39;</span><span class="p">,</span> <span class="n">des_x_input</span><span class="p">)</span>			<span class="c1"># Setting up the x-pos parameter with the retrived value.</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">set_param</span><span class="p">(</span><span class="s1">&#39;des_pos_y&#39;</span><span class="p">,</span> <span class="n">des_y_input</span><span class="p">)</span>			<span class="c1"># Setting up the x-pos parameter with the retrived value.</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">set_param</span><span class="p">(</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>					<span class="c1"># Setting up the modality variable to the current driving modality.</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;32;40m Modality 1 is active.&quot;</span><span class="p">)</span>
+			<span class="n">flag</span> <span class="o">=</span> <span class="mi">1</span>
+			
+		<span class="c1"># KEYBOARD INTERFACE</span>
+		<span class="k">elif</span> <span class="n">command</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+		
+			<span class="c1"># First modality calcel message</span>
+			<span class="k">if</span> <span class="n">flag</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Canceling goal&quot;</span><span class="p">)</span>
+				<span class="n">flag</span><span class="o">=</span><span class="mi">0</span>
+						
+			<span class="n">rospy</span><span class="o">.</span><span class="n">set_param</span><span class="p">(</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>				<span class="c1"># Set up of the second parameter.</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;33;40m Modality 2 is active.&quot;</span><span class="p">)</span>
+			
+				
+		<span class="c1"># KEYBOARD INTERFACE + AVOIDENCE</span>
+		<span class="k">elif</span> <span class="n">command</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+		
+			<span class="c1"># First modality calcel message</span>
+			<span class="k">if</span> <span class="n">flag</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Canceling goal&quot;</span><span class="p">)</span>
+				<span class="n">flag</span><span class="o">=</span><span class="mi">0</span>
+				
+			<span class="n">rospy</span><span class="o">.</span><span class="n">set_param</span><span class="p">(</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> 				<span class="c1"># Set up of the second parameter.</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;34;40m Modality 3 is active.&quot;</span><span class="p">)</span>
+				
+				
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># Message that will be sent whenever the keyboard input is different form the previously mentioned ones.</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;31;40m Wrong key, try again.&quot;</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+	<span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+	<span class="n">main</span><span class="p">()</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Fabio Conti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
 
+"""
+.. module:: teleop_avoid
+ :platform: Unix
+ :synopsis: Python node for robot's keyboard-input driving capapilities.
+
+.. moduleauthor:: Fabio Conti <s4693053@studenti.unige.it>
+
+Publishes to:
+ /cmd_vel
+ 
+The script is based on the standard ROS `teleop_twist_keyboard.py <http://wiki.ros.org/teleop_twist_keyboard>`.
+This node is constantly checking which keys are pressed on a PC keyboard and based on the pressed keys, publishes twist messages on the ``/cmd_vel`` topic. Twist message defines what should be the linear and rotational speeds of a mobile robot.
+
+I added some functions and changes to the code to merge it with the `avoidence.py` publisher and to manage the alternity of the activation state.
+Just like all the other programs, I had to manage the alternity of the *idle* to the *active* state through the use of an If-statement. Since the node also includes the functionalities of the third modality, the statement will set the node to an active modality if the ``active`` param is either set to 3 or 2.
+I added a new function named ``stop_motion`` to the ``PublishThread`` class. This function will make the robot stop once the driving modality gets switched. The function will set the linear and angular velocity to 0 with the `twist` message through the ``/cmd_vel`` topic.
+
+"""
+
 from __future__ import print_function
 
 import threading
@@ -33,18 +52,29 @@ e/c : increase/decrease only angular speed by 10%
 CTRL-C to quit
 \033[0;37;40m
 """
-# Variables for determining which direction is allowed.
-ok_left = 1
-ok_right = 1
-ok_straight = 1
 
-# Dictionary for moving commands
+ok_left = 1
+"""
+Variables for determining which direction is allowed.
+"""
+ok_right = 1
+"""
+Variables for determining which direction is allowed.
+"""
+ok_straight = 1
+"""
+Variables for determining which direction is allowed.
+"""
+
 moveBindings = {
         'i':(1,0,0,0),
         'j':(0,0,0,1),
         'l':(0,0,0,-1),
         'k':(-1,0,0,0),
     }
+"""
+Variables for determining which direction is allowed.
+"""
 
 
 # Dictionary for speed commands
@@ -58,6 +88,7 @@ speedBindings={
     }
 
 class PublishThread(threading.Thread):
+
     def __init__(self, rate):
         super(PublishThread, self).__init__()
         self.publisher = rospy.Publisher('cmd_vel', Twist, queue_size = 1)
@@ -109,6 +140,13 @@ class PublishThread(threading.Thread):
 
 	# Function needed for stopping the robot motion.
     def stop_motion(self):
+        """
+        I added this new function named ``stop_motion`` to the ``PublishThread`` class. This function will make the robot stop once the driving modality gets switched. The function will set the linear and angular velocity to 0 with the ``twist`` message through the ``/cmd_vel`` topic.
+        Args:
+         self
+        
+        No returns 
+        """
         twist = Twist()
         # Publish stop message when thread exits.
         twist.linear.x = 0
@@ -162,7 +200,13 @@ def getKey(key_timeout):
 
 
 def cb_avoidence(msg):
-
+	"""
+	The node *subscribes* to the custom topic ``custom_controller`` implemented for publishing the `Avoid. msg` message containing info about the walls surrounding the robot. The callback subscribed sets some local variables equal to the published fields of the custom message. The following uses these variables function to change some keyboards inputs to prevent the user to drive the robot into walls.
+	Args:
+	 msg (/custom_Controller): custom message built to retrive informtion about the position of the walls surrounding the robot.
+	 
+	 No Returns
+	"""
 	global ok_left
 	global ok_right
 	global ok_straight
@@ -175,7 +219,26 @@ def cb_avoidence(msg):
 
 # Function needed for preventing a certain command if the direction is blocked.
 def new_dict(dictionary):
-
+    """
+    The function uses the ``pop`` command to directly remove some keys from the dictionary. The removal will happen accordingly to the values retrieved by the previously mentioned callback to the ``custom_controller`` topic. The values retrieved by the teleop node are relocated in the following local variables:
+    
+    * `ok_right`:
+    	* 1 = the wall is not close to the right of the robot. The user will be able to turn right. 
+    	* 0 = the wall is close to the right of the robot. The user will not be able to turn right.
+    
+    * `ok_left`:
+    	* 1 = the wall is not close to the left of the robot. The user will be able to turn left. 
+    	* 0 = the wall is close to the left of the robot. The user will not be able to turn right.
+    
+    * `ok_straight`:
+    	* 1 = the wall is not close to the front of the robot. The user will be able to drive straight. 
+    	* 0 = the wall is close to the front of the robot. The user will not be able to drive straight.
+    	
+    Args
+     dictionary (dict): dictionary used to pop elements related to the avoidance feature.
+     
+    No Returns
+    """
     global ok_left
     global ok_right
     global ok_straight

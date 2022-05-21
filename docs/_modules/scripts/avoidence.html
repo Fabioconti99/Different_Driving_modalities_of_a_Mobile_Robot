@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>scripts.avoidence &mdash; final_assignment 1.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> final_assignment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">final_assignment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>scripts.avoidence</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for scripts.avoidence</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: avoidence</span>
+<span class="sd"> :platform: Unix</span>
+<span class="sd"> :synopsis: Python node for robot&#39;s avoidence.</span>
+
+<span class="sd">.. moduleauthor:: Fabio Conti &lt;s4693053@studenti.unige.it&gt;</span>
+
+<span class="sd">Subscribes to:</span>
+<span class="sd"> /laser_scan</span>
+<span class="sd"> </span>
+<span class="sd">Publishes to:</span>
+<span class="sd"> /avoid</span>
+<span class="sd"> </span>
+<span class="sd">This node aims to activate a security feature for driving with the teleop_key modality. Thanks to the *subscription* to the ``/laser_scan`` topic, the node will be able to get info about the robot&#39;s surroundings. The subscription to the topic will give back the ``ranges[0,720]`` array to the subscribed callback. This data structure contains the distance values between the robot and the surrounding walls for a span of 180º degrees in front of the robot. The array simulates the info that a set of lasers would retrieve in an actual environment.</span>
+<span class="sd">The node will later elaborate the data acquired to publish it on the ``custom_controller`` custom topic through the ``Avoid.msg`` custom message.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Imports</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">sensor_msgs.msg</span> <span class="kn">import</span> <span class="n">LaserScan</span>
+<span class="kn">import</span> <span class="nn">rospy</span>
+<span class="kn">from</span> <span class="nn">final_assignment.msg</span> <span class="kn">import</span> <span class="n">Avoid</span> <span class="c1">#custom import</span>
+
+
+
+
+
+<span class="n">ok_left</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Local variable for identifing the possible presence of a wall to the left of the robot.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">ok_right</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Local variable for identifing the possible presence of a wall to the right of the robot.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">ok_straight</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Local variable for identifing the possible presence of a wall to the front of the robot.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Call back function needed for checking if any wall is close to the robot and it what direction the wall is.</span>
+<div class="viewcode-block" id="cb_avoid"><a class="viewcode-back" href="../../index.html#scripts.avoidence.cb_avoid">[docs]</a><span class="k">def</span> <span class="nf">cb_avoid</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Callback function used to acquire and manage the data from the `/lase_scan` subscription. Once the callback retrieves the `ranges[]` array, the following 3 sub-ranges divide the data structure  as follows:</span>
+<span class="sd">	* From 0 to 143: which represents the right side of the scanned area.</span>
+<span class="sd">	* From 288 to 431: which represents the front side of the scanned area.</span>
+<span class="sd">	* From 576 to 719: which represents the left side of the scanned area.</span>
+<span class="sd">	</span>
+<span class="sd">	Args:</span>
+<span class="sd">	 msg (sensor_messages/LaserScan.msg): contains `ranges` array which provides the distances of each laser with respect to the objects in the enviroment.</span>
+<span class="sd">	 </span>
+<span class="sd">	No Returns</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">global</span> <span class="n">ok_left</span>
+	<span class="k">global</span> <span class="n">ok_right</span>
+	<span class="k">global</span> <span class="n">ok_straight</span>
+	
+	<span class="n">active_</span><span class="o">=</span><span class="n">rospy</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s2">&quot;/active&quot;</span><span class="p">)</span>		<span class="c1"># Assignment of the active param value to a local variable.</span>
+	
+	
+	<span class="k">if</span> <span class="n">active_</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+		
+		<span class="n">right</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">143</span><span class="p">])</span>	<span class="c1"># right checking laser span.</span>
+		<span class="n">front</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">ranges</span><span class="p">[</span><span class="mi">288</span><span class="p">:</span><span class="mi">431</span><span class="p">])</span>	<span class="c1"># front checking laser span.</span>
+		<span class="n">left</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">ranges</span><span class="p">[</span><span class="mi">576</span><span class="p">:</span><span class="mi">719</span><span class="p">])</span>	<span class="c1"># left checking laser span.</span>
+		
+								<span class="c1"># If the robot is close to the right of the robot.</span>
+		<span class="k">if</span> <span class="n">right</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+			<span class="n">ok_right</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">ok_right</span> <span class="o">=</span> <span class="mi">1</span>
+								<span class="c1"># If the robot is close to the front of the robot.</span>
+		<span class="k">if</span> <span class="n">front</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+			<span class="n">ok_straight</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">ok_straight</span> <span class="o">=</span> <span class="mi">1</span>
+								<span class="c1"># If the robot is close to the left of the robot.</span>
+		<span class="k">if</span> <span class="n">left</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+			<span class="n">ok_left</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">ok_left</span> <span class="o">=</span> <span class="mi">1</span>
+								<span class="c1"># Let all the direction good to go if the modality 3</span>
+								<span class="c1"># is turned off.</span>
+	<span class="k">else</span><span class="p">:</span> 
+		<span class="n">ok_right</span> <span class="o">=</span> <span class="mi">1</span>
+		<span class="n">ok_straight</span> <span class="o">=</span> <span class="mi">1</span>
+		<span class="n">ok_left</span> <span class="o">=</span> <span class="mi">1</span></div>
+		
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../index.html#scripts.avoidence.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	The main function of this node will always be active during execution. The first section of the function is dedicate to the definition of the subscriber callback and the pubblisher. The three `pub_msg` sections will be equated to the `ok_` local variables and constantly pubblished with a 5 hz rate to the custom topic `custom_controller`.</span>
+<span class="sd">	</span>
+<span class="sd">	No Returns</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">global</span> <span class="n">ok_left</span>
+	<span class="k">global</span> <span class="n">ok_right</span>
+	<span class="k">global</span> <span class="n">ok_straight</span>
+	
+	<span class="n">pub</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">Publisher</span><span class="p">(</span><span class="s1">&#39;custom_controller&#39;</span><span class="p">,</span> <span class="n">Avoid</span><span class="p">,</span> <span class="n">queue_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>	<span class="c1"># Publisher.</span>
+	<span class="n">rospy</span><span class="o">.</span><span class="n">init_node</span><span class="p">(</span><span class="s1">&#39;avoidence&#39;</span><span class="p">)</span> 								<span class="c1"># Initialization of the node.</span>
+	<span class="n">sub</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">Subscriber</span><span class="p">(</span><span class="s1">&#39;/scan&#39;</span><span class="p">,</span> <span class="n">LaserScan</span><span class="p">,</span> <span class="n">cb_avoid</span><span class="p">)</span>				<span class="c1"># Sub to the &#39;/scan&#39; topic.</span>
+	<span class="n">rate</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> 									<span class="c1">#10hz</span>
+	
+	<span class="n">pub_msg</span> <span class="o">=</span> <span class="n">Avoid</span><span class="p">()</span>
+	
+    
+	<span class="k">while</span> <span class="ow">not</span> <span class="n">rospy</span><span class="o">.</span><span class="n">is_shutdown</span><span class="p">():</span>
+	
+		<span class="n">pub_msg</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">ok_left</span>		<span class="c1"># Assigning the messages fields</span>
+		<span class="n">pub_msg</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">ok_right</span>	<span class="c1"># Assigning the messages fields</span>
+		<span class="n">pub_msg</span><span class="o">.</span><span class="n">front</span> <span class="o">=</span> <span class="n">ok_straight</span>	<span class="c1"># Assigning the messages fields</span>
+		
+		<span class="n">pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">pub_msg</span><span class="p">)</span>		<span class="c1"># publishing the messages fields</span>
+		
+		<span class="n">rate</span><span class="o">.</span><span class="n">sleep</span><span class="p">()</span>				<span class="c1"># 10hz delay.</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+	<span class="n">main</span><span class="p">()</span>
+		
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Fabio Conti.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
